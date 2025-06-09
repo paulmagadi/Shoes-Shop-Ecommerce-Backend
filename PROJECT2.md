@@ -145,6 +145,12 @@ class CustomUserAdmin(UserAdmin):
 admin.site.register(CustomUser, CustomUserAdmin)
 ```
 
+### settings.py
+
+```
+AUTH_USER_MODEL = "users.CustomUser"
+```
+
 ### Migrations
 ```
 py manage.py makemigrations
