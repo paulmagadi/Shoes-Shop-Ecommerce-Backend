@@ -9,6 +9,7 @@ from django.templatetags.static import static
 from mptt.models import MPTTModel, TreeForeignKey
 from django.utils.text import slugify
 from django.utils import timezone
+from users.models import CustomUser
 
 # -----------------------------
 # Lookups & Attributes
@@ -126,8 +127,8 @@ class Product(models.Model):
     archived_at = models.DateTimeField(null=True, blank=True)
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
-    created_by = models.ForeignKey('users.CustomUser', on_delete=models.SET_NULL, null=True, related_name='created_products')
-    updated_by = models.ForeignKey('users.CustomUser', on_delete=models.SET_NULL, null=True, related_name='updated_products')
+    created_by = models.ForeignKey(CustomUser, on_delete=models.SET_NULL, null=True, related_name='created_products')
+    updated_by = models.ForeignKey(CustomUser, on_delete=models.SET_NULL, null=True, related_name='updated_products')
     approved_by = models.ForeignKey(
         settings.AUTH_USER_MODEL,
         on_delete=models.SET_NULL,
