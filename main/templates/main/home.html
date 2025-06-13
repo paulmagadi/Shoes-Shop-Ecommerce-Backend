@@ -11,9 +11,19 @@ Shoe Shop Ecommerce
 
 <img src="{% static 'images/shoes.jpg' %}" alt="" width="200px">
 
+
+<button id="clickme" type="button">Click</button>
+
 <!-- <div class="element" style="width: 200px; height: 100px; background-color: yellow;">
 
 </div> -->
 
-<button id="clickme">Click</button>
+{% if user.is_authenticated %}
+  <form action="{% url 'logout' %}" method="post" style="display:inline;">
+    {% csrf_token %}
+    <button type="submit">Logout</button>
+  </form>
+{% endif %}
+
+
 {% endblock %}
