@@ -1,30 +1,34 @@
 from django.contrib import admin
 from django.contrib.auth.admin import UserAdmin
 from .forms import CustomUserCreationForm, CustomUserChangeForm
+
+from django.utils.translation import gettext_lazy as _
 from .models import CustomUser
 
-
+@admin.register(CustomUser)
 class CustomUserAdmin(UserAdmin):
+    
     add_form = CustomUserCreationForm
     form = CustomUserChangeForm
     model = CustomUser
-    list_display = ("first_name", "last_name", "email", "is_staff", "is_active", "last_login", "date_joined")
-    list_filter = ("email", "is_staff", "is_active")
+    list_display = ('email', 'first_name', 'last_name', 'is_active', 'is_staff', 'is_email_verified')
+    list_filter = ('is_active', 'is_staff', 'is_email_verified')
     fieldsets = (
-        (None, {"fields": ("email", "password")}),
-        ("Permissions", {"fields": ("is_staff", "is_active", "groups", "user_permissions")}),
-        ('Personal Info', {'fields': ('first_name', 'last_name', 'profile_image')}),
+        (None, {'fields': ('email', 'password')}),
+        (_('Personal Info'), {'fields': ('first_name', 'last_name', 'profile_image')}),
+        (_('Verification'), {'fields': ('is_email_verified',)}),
+        (_('Permissions'), {'fields': ('is_staff', 'is_superuser', 'groups', 'user_permissions')}),
+        (_('Dates'), {'fields': ('last_login', 'date_joined')}),
     )
     add_fieldsets = (
         (None, {
-            "classes": ("wide",),
-            "fields": ("email", "password1", "password2", "first_name", "last_name"),
-        }),
+            'classes': ('wide',),
+            'fields': ('email', 'first_name', 'last_name', 'password1', 'password2', 'is_active', 'is_staff')}
+        ),
     )
-    search_fields = ("email", "first_name", "last_name")
-    ordering = ("email",)
+    search_fields = ('email', 'first_name', 'last_name')
+    ordering = ('email',)
     filter_horizontal = ("groups", "user_permissions",)
     readonly_fields = ("id", "last_login", "date_joined",)
 
-admin.site.register(CustomUser, CustomUserAdmin)
 
