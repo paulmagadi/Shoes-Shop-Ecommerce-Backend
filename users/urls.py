@@ -3,9 +3,12 @@ from . import views
 
 
 urlpatterns = [
+    # User registration flow
     path('register/', views.register_user, name='register'),
     path('activate/<uidb64>/<token>/', views.activate_user, name='activate'),
     path('resend-activation/', views.resend_activation_user, name='resend_activation'),
+    
+    # User login and logout
     path('login/', views.login_user, name='login'),
     path('logout/', views.logout_user, name='logout'),
 ]
@@ -38,4 +41,11 @@ urlpatterns += [
     path('password-change/done/', auth_views.PasswordChangeDoneView.as_view(
         template_name='users/password_change_done.html'
     ), name='password_change_done'),
+]
+
+from .views import dashboard_view, update_profile_view
+
+urlpatterns += [
+    path('account/', dashboard_view, name='dashboard'),
+    path('account/edit/', update_profile_view, name='edit_profile'),
 ]

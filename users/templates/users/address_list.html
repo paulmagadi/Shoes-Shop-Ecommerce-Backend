@@ -1,0 +1,14 @@
+<h2>Your Addresses</h2>
+<a href="{% url 'add_address' %}">+ Add New Address</a>
+<ul>
+  {% for address in addresses %}
+    <li>
+      <strong>{{ address.full_name }}</strong> – {{ address.city }}  
+      {% if address.is_primary %} <em>(Primary)</em> {% endif %}
+      <a href="{% url 'edit_address' address.pk %}">Edit</a>
+      <a href="{% url 'delete_address' address.pk %}">Delete</a>
+    </li>
+  {% empty %}
+    <li>No addresses found.</li>
+  {% endfor %}
+</ul>

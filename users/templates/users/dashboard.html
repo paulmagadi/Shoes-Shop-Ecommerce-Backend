@@ -1,0 +1,6 @@
+<h2>Welcome, {{ user.first_name }}!</h2>
+<img src="{{ user.imageURL }}" width="100" height="100" alt="Profile image">
+<p>Email: {{ user.email }}</p>
+<p>Joined: {{ user.date_joined }}</p>
+
+<a href="{% url 'edit_profile' %}">Edit Profile</a>

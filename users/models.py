@@ -72,33 +72,19 @@ class CustomUser(AbstractBaseUser, PermissionsMixin):
             return self.profile_image.url
         return static('images/user.png')
 
-
-
-# class EmailVerificationToken(models.Model):
-#     user = models.ForeignKey(CustomUser, on_delete=models.CASCADE)
-#     token = models.CharField(max_length=255, unique=True)
-#     created_at = models.DateTimeField(auto_now_add=True)
-#     expires_at = models.DateTimeField()
-
-#     def is_expired(self):
-#         return timezone.now() > self.expires_at
- 
-
-
 class BillingAddress(models.Model):
     user = models.OneToOneField(CustomUser, on_delete=models.CASCADE, related_name="billing_address")
-    phone = models.CharField(max_length=20, blank=True)
-    full_name = models.CharField(max_length=255)
+    full_name = models.CharField(max_length=100)
     email = models.CharField(max_length=255)
-    address1 = models.CharField(max_length=255)
-    address2 = models.CharField(max_length=255, null=True, blank=True)
-    city = models.CharField(max_length=255)
-    state = models.CharField(max_length=255, null=True, blank=True)
-    zipcode = models.CharField(max_length=200, blank=True)
-    country = models.CharField(max_length=255)
+    phone = models.CharField(max_length=20)
+    address = models.TextField()
+    city = models.CharField(max_length=100)
+    postal_code = models.CharField(max_length=20)
+    country = models.CharField(max_length=100)
+    created_at = models.DateTimeField(auto_now_add=True)
 
     def __str__(self):
-        return self.user.email
+        return f"Billing - {self.full_name}, {self.city}"
     
     class Meta:
         verbose_name_plural = 'Billing Address'

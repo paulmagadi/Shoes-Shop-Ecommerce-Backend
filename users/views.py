@@ -47,6 +47,9 @@ def register_user(request):
     return render(request, 'users/register_user.html', {'form': form})
 
 
+from django.contrib.auth import login
+from django.contrib.auth import get_backends
+
 def activate_user(request, uidb64, token):
     try:
         uid = force_str(urlsafe_base64_decode(uidb64))
@@ -55,15 +58,21 @@ def activate_user(request, uidb64, token):
         user = None
 
     if user and email_verification_token.check_token(user, token):
-        user.is_email_verified = True
         user.is_active = True
+        user.is_email_verified = True
         user.save()
-        login(request, user)  # Optional: auto-login after activation
+
+        # ✅ FIX: set the backend manually
+        backend = get_backends()[0]
+        user.backend = f"{backend.__module__}.{backend.__class__.__name__}"
+
+        login(request, user)
         messages.success(request, 'Email verified successfully. You are now logged in.')
-        return redirect('home')  # Adjust as needed
+        return redirect('home')  # or home
     else:
         messages.error(request, 'Invalid or expired activation link.')
         return redirect('login')
+
     
     
 from .forms import ResendActivationEmailForm
@@ -182,3 +191,26 @@ def logout_user(request):
     logout(request)
     messages.success(request, ('You have been logged out!!!'))
     return redirect('home')
+
+
+from django.contrib.auth.decorators import login_required
+from django.shortcuts import render, redirect
+from .forms import UpdateUserForm
+from django.contrib import messages
+
+@login_required
+def dashboard_view(request):
+    return render(request, 'users/dashboard.html', {'user': request.user})
+
+
+@login_required
+def update_profile_view(request):
+    if request.method == 'POST':
+        form = UpdateUserForm(request.POST, request.FILES, instance=request.user)
+        if form.is_valid():
+            form.save()
+            messages.success(request, "Your profile has been updated.")
+            return redirect('dashboard')
+    else:
+        form = UpdateUserForm(instance=request.user)
+    return render(request, 'users/profile_update.html', {'form': form})
