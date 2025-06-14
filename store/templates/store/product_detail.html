@@ -1,0 +1,46 @@
+<h2>{{ product.name }}</h2>
+<p>Brand: {{ product.brand.name }}</p>
+<p>Type: {{ product.type.name }}</p>
+
+<div class="gallery">
+  {% for variant in variants %}
+    {% for image in variant.images.all %}
+      <img src="{{ image.imageURL }}" alt="{{ product.name }} - {{ variant.color.name }}" width="100">
+    {% endfor %}
+  {% endfor %}
+</div>
+
+<h3>Available Options:</h3>
+
+<ul>
+  {% for variant in variants %}
+    <li>{{ variant.color.name }} | Size: {{ variant.size }} | KES {{ variant.price }}</li>
+  {% endfor %}
+</ul>
+
+{% for variant in variants %}
+  <form method="post" action="{% url 'add_to_cart' variant.id %}">
+    {% csrf_token %}
+    <p>{{ variant.color.name }} | Size: {{ variant.size }} | KES {{ variant.price }} ({{ variant.stock }} in stock)</p>
+    <input type="number" name="quantity" min="1" max="{{ variant.stock }}" value="1">
+    <button type="submit">Add</button>
+  </form>
+{% endfor %}
+
+
+
+{% comment %}
+  <form method="post" action="{% url 'add_to_cart' variant.id %}">
+    {% csrf_token %}
+    
+    <label>Size: {{ variant.size }}</label><br>
+    <label>Color: {{ variant.color.name }}</label><br>
+  
+    <label for="quantity">Quantity:</label>
+    <input type="number" name="quantity" id="quantity" min="1" max="{{ variant.stock }}" value="1">
+  
+    <button type="submit">Add to Cart</button>
+  </form>
+{% endcomment %}
+  
+

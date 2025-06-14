@@ -1,6 +1,8 @@
-from django.shortcuts import render
+from django.shortcuts import render, get_object_or_404
+from store.models import Product, ProductImage, Variant
 
 # Create your views here.
 
 def home(request):
-    return render(request, 'main/home.html')
+    products = Product.objects.filter(is_active=True, is_archived=False).order_by('-created_at')[:12]
+    return render(request, 'main/home.html', {'products': products})

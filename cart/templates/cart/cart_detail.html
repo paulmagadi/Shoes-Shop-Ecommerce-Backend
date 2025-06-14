@@ -1,0 +1,27 @@
+<h2>Your Cart</h2>
+<table>
+  <tr><th>Product</th><th>Variant</th><th>Qty</th><th>Price</th><th>Actions</th></tr>
+  {% for item in items %}
+  <tr>
+    <td>{{ item.variant.product.name }}</td>
+    <td>{{ item.variant.color.name }} / Size {{ item.variant.size }}</td>
+    <td>
+      <form method="post" action="{% url 'update_cart_item' item.id %}">
+        {% csrf_token %}
+        <input type="number" name="quantity" value="{{ item.quantity }}" min="1" max="{{ item.variant.stock }}">
+        <button type="submit">Update</button>
+      </form>
+    </td>
+    <td>KES {{ item.get_total_price }}</td>
+    <td>
+      <form method="post" action="{% url 'remove_cart_item' item.id %}">
+        {% csrf_token %}
+        <button type="submit">Remove</button>
+      </form>
+    </td>
+  </tr>
+  {% endfor %}
+</table>
+
+<h3>Total: KES {{ total }}</h3>
+<a href="{% url 'checkout' %}">Proceed to Checkout</a>
