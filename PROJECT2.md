@@ -2,6 +2,7 @@
 
 Here we create a custom user, that takes an email as the unique identifier(username)
 > We use django's AbstractBaseUser and PermissionsMixin
+> Ensure this is done before making any migrations else, you will need to reset the database
 
 ### models.py
 

@@ -102,8 +102,8 @@ class ProductAdmin(admin.ModelAdmin):
 # -----------------------------
 @admin.register(Variant)
 class VariantAdmin(admin.ModelAdmin):
-    list_display = ("product", "color", "size", "stock", "price", "sale_price", "sku")
-    list_filter = ("color", "size", "product__brand")
+    list_display = ("product", "color", "stock", "price", "sale_price", "sku")
+    list_filter = ("color", "product__brand")
     search_fields = ("sku", "product__name")
     inlines = [ProductImageInline]
 

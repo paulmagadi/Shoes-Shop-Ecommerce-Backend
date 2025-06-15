@@ -85,14 +85,6 @@ class Material(models.Model):
         return self.name
 
 
-class Color(models.Model):
-    name = models.CharField(max_length=50)
-    hex_code = models.CharField(max_length=7, null=True, blank=True)
-
-    def __str__(self):
-        return self.name
-
-
 class Size(models.Model):
     us_size = models.DecimalField(max_digits=4, decimal_places=1)
     eu_size = models.DecimalField(max_digits=4, decimal_places=1, null=True, blank=True)
@@ -100,6 +92,16 @@ class Size(models.Model):
 
     def __str__(self):
         return f"US {self.us_size}"
+    
+class Color(models.Model):
+    name = models.CharField(max_length=50)
+    hex_code = models.CharField(max_length=7, null=True, blank=True)
+    size = models.ManyToManyField(Size)
+
+    def __str__(self):
+        return self.name
+
+
 
 
 # -----------------------------
@@ -177,21 +179,20 @@ class Product(models.Model):
 class Variant(models.Model):
     product = models.ForeignKey(Product, on_delete=models.CASCADE, related_name='variants')
     color = models.ForeignKey(Color, on_delete=models.CASCADE)
-    size = models.ForeignKey(Size, on_delete=models.CASCADE)
     stock = models.PositiveIntegerField()
     sku = models.CharField(max_length=50, unique=True, blank=True)
     price = models.DecimalField(max_digits=10, decimal_places=2)
     sale_price = models.DecimalField(max_digits=10, decimal_places=2, null=True, blank=True)
 
     class Meta:
-        unique_together = ('product', 'color', 'size')
+        unique_together = ('product', 'color')
 
     def __str__(self):
-        return f"{self.product.name} - {self.color.name} - {self.size}"
+        return f"{self.product.name} - {self.color.name} "
 
     def save(self, *args, **kwargs):
         if not self.sku:
-            self.sku = f"{self.product.brand.name[:3].upper()}-{self.product.id}-{self.color.name[:3].upper()}-{str(self.size.us_size)}".replace(" ", "")
+            self.sku = f"{self.product.brand.name[:3].upper()}-{self.product.id}-{self.color.name[:3].upper()}"
         super().save(*args, **kwargs)
 
 
