@@ -1,18 +1,12 @@
-from django.conf import settings
 from django.db import models
-from datetime import timedelta
-from django.dispatch import receiver
-from django.db.models.signals import pre_save
-from django.core.exceptions import ValidationError
-from PIL import Image
+from django.utils.text import slugify
 from django.templatetags.static import static
 from mptt.models import MPTTModel, TreeForeignKey
-from django.utils.text import slugify
-from django.utils import timezone
 from users.models import CustomUser
 
+
 # -----------------------------
-# Lookups & Attributes
+# Basic Attributes
 # -----------------------------
 class Category(MPTTModel):
     name = models.CharField(max_length=100)
@@ -21,28 +15,17 @@ class Category(MPTTModel):
 
     class MPTTMeta:
         order_insertion_by = ['name']
-
     class Meta:
         unique_together = ('parent', 'name')
         verbose_name_plural = 'Categories'
 
+    def __str__(self):
+        return " > ".join([c.name for c in self.get_ancestors(include_self=True)])
+
     def save(self, *args, **kwargs):
         if not self.slug:
-            base_slug = slugify(self.name)
-            slug = base_slug
-            counter = 1
-            while Category.objects.filter(slug=slug).exists():
-                slug = f"{base_slug}-{counter}"
-                counter += 1
-            self.slug = slug
+            self.slug = slugify(self.name)
         super().save(*args, **kwargs)
-
-    def get_full_path(self):
-        ancestors = self.get_ancestors(include_self=True)
-        return " > ".join([category.name for category in ancestors])
-
-    def __str__(self):
-        return self.get_full_path()
 
 
 class Brand(models.Model):
@@ -55,66 +38,42 @@ class Brand(models.Model):
 
     @property
     def imageURL(self):
-        if self.logo:
-            return self.logo.url
-        return static('images/brand/holder2.png')
+        return self.logo.url if self.logo else static('images/brand-logos/holder2.png')
 
 
 class Type(models.Model):
     name = models.CharField(max_length=100, unique=True)
-
-    def __str__(self):
-        return self.name
+    def __str__(self): return self.name
 
 
 class Gender(MPTTModel):
     name = models.CharField(max_length=100)
     parent = TreeForeignKey('self', on_delete=models.SET_NULL, null=True, blank=True, related_name='children')
-
-    class MPTTMeta:
-        order_insertion_by = ['name']
-
-    def __str__(self):
-        return self.name
+    class MPTTMeta: order_insertion_by = ['name']
+    def __str__(self): return self.name
 
 
 class Material(models.Model):
     name = models.CharField(max_length=100)
-
-    def __str__(self):
-        return self.name
+    def __str__(self): return self.name
 
 
 class Size(models.Model):
     us_size = models.DecimalField(max_digits=4, decimal_places=1)
     eu_size = models.DecimalField(max_digits=4, decimal_places=1, null=True, blank=True)
     uk_size = models.DecimalField(max_digits=4, decimal_places=1, null=True, blank=True)
+    def __str__(self): return f"US {self.us_size}"
 
-    def __str__(self):
-        return f"US {self.us_size}"
-    
+
 class Color(models.Model):
     name = models.CharField(max_length=50)
     hex_code = models.CharField(max_length=7, null=True, blank=True)
-    size = models.ManyToManyField(Size)
-
-    def __str__(self):
-        return self.name
-
-
+    def __str__(self): return self.name
 
 
 # -----------------------------
-# Core Product Model
+# Product Core
 # -----------------------------
-class ProductManager(models.Manager):
-    def active(self):
-        return self.filter(is_active=True, is_archived=False)
-
-    def archived(self):
-        return self.filter(is_archived=True)
-
-
 class Product(models.Model):
     name = models.CharField(max_length=200)
     slug = models.SlugField(unique=True, blank=True)
@@ -126,45 +85,21 @@ class Product(models.Model):
     material = models.ForeignKey(Material, on_delete=models.SET_NULL, null=True, blank=True)
     is_active = models.BooleanField(default=False)
     is_archived = models.BooleanField(default=False)
-    archived_at = models.DateTimeField(null=True, blank=True)
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
     created_by = models.ForeignKey(CustomUser, on_delete=models.SET_NULL, null=True, related_name='created_products')
     updated_by = models.ForeignKey(CustomUser, on_delete=models.SET_NULL, null=True, related_name='updated_products')
-    approved_by = models.ForeignKey(
-        settings.AUTH_USER_MODEL,
-        on_delete=models.SET_NULL,
-        null=True,
-        blank=True,
-        related_name='approved_products'
-    )
+    approved_by = models.ForeignKey(CustomUser, on_delete=models.SET_NULL, null=True, blank=True, related_name='approved_products')
     approved_at = models.DateTimeField(null=True, blank=True)
-    
-    objects = ProductManager()
+
     class Meta:
-        permissions = [
-            ('can_approve_product', 'Can approve product for listing'),
-        ]
+        permissions = [('can_approve_product', 'Can approve product for listing')]
 
-    def __str__(self):
-        return self.name
+    def __str__(self): return self.name
 
-    def archive(self):
-        self.is_archived = True
-        self.archived_at = timezone.now()
-        self.save()
-
-    def unarchive(self):
-        self.is_archived = False
-        self.archived_at = None
-        self.save()
-
-    def save(self, *args, **kwargs):
+    def save(self, *args, user=None, **kwargs):
         if not self.slug:
             self.slug = slugify(self.name)
-        super().save(*args, **kwargs)
-        
-    def save(self, *args, user=None, **kwargs):
         if user and not self.pk:
             self.created_by = user
         if user:
@@ -172,32 +107,48 @@ class Product(models.Model):
         super().save(*args, **kwargs)
 
 
-
 # -----------------------------
-# Variant and Images
+# ProductColor (Color Group)
 # -----------------------------
-class Variant(models.Model):
-    product = models.ForeignKey(Product, on_delete=models.CASCADE, related_name='variants')
+class ProductColor(models.Model):
+    product = models.ForeignKey(Product, on_delete=models.CASCADE, related_name='colors')
     color = models.ForeignKey(Color, on_delete=models.CASCADE)
-    stock = models.PositiveIntegerField()
-    sku = models.CharField(max_length=50, unique=True, blank=True)
-    price = models.DecimalField(max_digits=10, decimal_places=2)
-    sale_price = models.DecimalField(max_digits=10, decimal_places=2, null=True, blank=True)
 
     class Meta:
         unique_together = ('product', 'color')
 
     def __str__(self):
-        return f"{self.product.name} - {self.color.name} "
+        return f"{self.product.name} - {self.color.name}"
+
+
+# -----------------------------
+# Variant = Color + Size + Stock
+# -----------------------------
+class Variant(models.Model):
+    product_color = models.ForeignKey(ProductColor, on_delete=models.CASCADE, related_name='variants')
+    size = models.ForeignKey(Size, on_delete=models.CASCADE)
+    stock = models.PositiveIntegerField()
+    price = models.DecimalField(max_digits=10, decimal_places=2)
+    sale_price = models.DecimalField(max_digits=10, decimal_places=2, null=True, blank=True)
+    sku = models.CharField(max_length=50, unique=True, blank=True)
+
+    class Meta:
+        unique_together = ('product_color', 'size')
+
+    def __str__(self):
+        return f"{self.product_color} - Size {self.size}"
 
     def save(self, *args, **kwargs):
         if not self.sku:
-            self.sku = f"{self.product.brand.name[:3].upper()}-{self.product.id}-{self.color.name[:3].upper()}"
+            self.sku = f"{self.product_color.product.brand.name[:3].upper()}-{self.product_color.id}-{str(self.size.us_size)}".replace(" ", "")
         super().save(*args, **kwargs)
 
 
+# -----------------------------
+# Product Images (by color group)
+# -----------------------------
 class ProductImage(models.Model):
-    variant = models.ForeignKey(Variant, on_delete=models.CASCADE, related_name='images')
+    product_color = models.ForeignKey(ProductColor, on_delete=models.CASCADE, related_name='images')
     image = models.ImageField(upload_to='product-images/')
     is_featured = models.BooleanField(default=False)
 
@@ -206,10 +157,7 @@ class ProductImage(models.Model):
         ordering = ['-is_featured', 'id']
 
     def __str__(self):
-        return f"{self.variant.product.name} - {self.variant.color.name} Image"
-
-    def save(self, *args, **kwargs):
-        super().save(*args, **kwargs)
+        return f"{self.product_color} Image"
 
     @property
     def imageURL(self):
@@ -217,15 +165,3 @@ class ProductImage(models.Model):
             return self.image.url
         except:
             return ''
-
-
-@receiver(pre_save, sender=ProductImage)
-def resize_image(sender, instance, **kwargs):
-    if instance.image:
-        try:
-            img = Image.open(instance.image)
-            if img.height > 1125 or img.width > 1125:
-                img.thumbnail((1125, 1125))
-                img.save(instance.image.path, quality=70, optimize=True)
-        except Exception as e:
-            print(f"Error resizing image: {e}")

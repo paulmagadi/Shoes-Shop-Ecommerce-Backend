@@ -29,18 +29,23 @@ Shoe Shop Ecommerce
 <p><a href="{% url 'password_change' %}"> Change password</a></p>
 
 <h2>Latest Products</h2>
-<div class="grid">
+<div class="product-grid">
   {% for product in products %}
-    <div class="product-card">
-      <a href="{% url 'product_detail' slug=product.slug %}">
-        <img src="{{ product.variants.first.images.first.imageURL }}" alt="{{ product.name }}" width="150">
-        <h3>{{ product.name }}</h3>
-        <p>{{ product.brand.name }}</p>
-        <p>KES {{ product.variants.first.price }}</p>
-      </a>
-    </div>
+    {% with color=product.colors.first %}
+      <div class="product-card">
+        <a href="{% url 'product_detail' product.slug %}">
+          <img src="{{ color.images.first.imageURL }}" alt="{{ product.name }}" width="150">
+          <h3>{{ product.name }}</h3>
+          <p>{{ product.brand.name }}</p>
+          <p>
+            KES {{ color.variants.first.price }}
+          </p>
+        </a>
+      </div>
+    {% endwith %}
   {% endfor %}
 </div>
+
 
 
 

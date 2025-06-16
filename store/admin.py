@@ -1,15 +1,11 @@
 from django.contrib import admin
 from .models import (
     Category, Brand, Type, Gender, Material, Color, Size,
-    Product, Variant, ProductImage
+    Product, ProductColor, Variant, ProductImage
 )
 from django.utils.html import format_html
-from django.utils.timezone import now
-
 from django.utils import timezone
-
 from mptt.admin import DraggableMPTTAdmin
-
 
 
 # -----------------------------
@@ -49,22 +45,25 @@ class ProductImageInline(admin.TabularInline):
 class VariantInline(admin.TabularInline):
     model = Variant
     extra = 1
+    fields = ('size', 'stock', 'price', 'sale_price', 'sku')
+    readonly_fields = ('sku',)
+
+
+class ProductColorInline(admin.StackedInline):
+    model = ProductColor
+    extra = 1
     show_change_link = True
+    inlines = []  # We’ll register its children separately
+    verbose_name_plural = "Colors for Product"
+
+    # Custom method to include Variant & Images under ProductColor (requires nested admin or manual management)
+    def get_inline_instances(self, request, obj=None):
+        return super().get_inline_instances(request, obj)
 
 
 # -----------------------------
 # Product Admin
 # -----------------------------
-# @admin.register(Product)
-# class ProductAdmin(admin.ModelAdmin):
-#     list_display = ("name", "brand", "category", "is_active", "is_archived", "created_at")
-#     list_filter = ("is_active", "is_archived", "brand", "category", "gender")
-#     search_fields = ("name", "brand__name", "category__name")
-#     inlines = [VariantInline]
-#     actions = [archive_products, unarchive_products, permanently_delete_products]
-#     prepopulated_fields = {"slug": ("name",)}
-    
-
 @admin.register(Product)
 class ProductAdmin(admin.ModelAdmin):
     list_display = ("name", "brand", "is_active", "is_archived", "approved_by", "approved_at", "created_at")
@@ -72,10 +71,11 @@ class ProductAdmin(admin.ModelAdmin):
     readonly_fields = ("approved_by", "approved_at")
     search_fields = ("name", "brand__name", "category__name")
     prepopulated_fields = {"slug": ("name",)}
+    inlines = [ProductColorInline]
     actions = ['approve_selected_products']
 
     def approve_selected_products(self, request, queryset):
-        if not request.user.has_perm("yourapp.can_approve_product"):
+        if not request.user.has_perm("store.can_approve_product"):
             self.message_user(request, "You don't have permission to approve products.", level='error')
             return
 
@@ -89,29 +89,34 @@ class ProductAdmin(admin.ModelAdmin):
     approve_selected_products.short_description = "✅ Approve and list selected products"
 
     def save_model(self, request, obj, form, change):
-        # Only auto-approve if user has the permission and checked is_active
-        if obj.is_active and request.user.has_perm("yourapp.can_approve_product"):
+        if obj.is_active and request.user.has_perm("store.can_approve_product"):
             obj.approved_by = request.user
             obj.approved_at = timezone.now()
         super().save_model(request, obj, form, change)
 
 
+# -----------------------------
+# ProductColor Admin
+# -----------------------------
+@admin.register(ProductColor)
+class ProductColorAdmin(admin.ModelAdmin):
+    list_display = ("product", "color")
+    inlines = [ProductImageInline, VariantInline]
+
 
 # -----------------------------
-# Variant Admin (Detailed View)
+# Variant Admin (optional direct)
 # -----------------------------
 @admin.register(Variant)
 class VariantAdmin(admin.ModelAdmin):
-    list_display = ("product", "color", "stock", "price", "sale_price", "sku")
-    list_filter = ("color", "product__brand")
-    search_fields = ("sku", "product__name")
-    inlines = [ProductImageInline]
+    list_display = ("product_color", "size", "stock", "price", "sale_price", "sku")
+    list_filter = ("product_color__product__brand", "product_color__color")
+    search_fields = ("sku", "product_color__product__name")
 
 
 # -----------------------------
 # Lookup Tables Admin
 # -----------------------------
-# admin.site.register(Category)
 admin.site.register(Brand)
 admin.site.register(Type)
 admin.site.register(Gender)
@@ -120,4 +125,3 @@ admin.site.register(Color)
 admin.site.register(Size)
 
 admin.site.register(Category, DraggableMPTTAdmin)
-# admin.site.register(Gender, DraggableMPTTAdmin)

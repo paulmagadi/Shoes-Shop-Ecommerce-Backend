@@ -1,46 +1,77 @@
-<h2>{{ product.name }}</h2>
-<p>Brand: {{ product.brand.name }}</p>
-<p>Type: {{ product.type.name }}</p>
+{% extends 'main/base.html' %}
 
-<div class="gallery">
-  {% for variant in variants %}
-    {% for image in variant.images.all %}
-      <img src="{{ image.imageURL }}" alt="{{ product.name }} - {{ variant.color.name }}" width="100">
-    {% endfor %}
+{% block content %}
+  <!-- Color selector with data-color-id -->
+<div class="color-selector">
+  {% for color in colors %}
+  <button type="button" class="color-btn" data-color-id="{{ color.id }}">
+    <img src="{{ color.images.first.imageURL }}" alt="{{ color.color.name }}" width="40">
+  </button>
   {% endfor %}
 </div>
 
-<h3>Available Options:</h3>
+<form method="post" action="" id="variant-form">
+  {% csrf_token %}
 
-<ul>
-  {% for variant in variants %}
-    <li>{{ variant.color.name }} | Size: {{ variant.size }} | KES {{ variant.price }}</li>
-  {% endfor %}
-</ul>
+  <label>Select Size:</label>
+  <select name="variant_id" id="variant-select" required>
+    <!-- will be filled dynamically -->
+  </select>
 
-{% for variant in variants %}
-  <form method="post" action="{% url 'add_to_cart' variant.id %}">
-    {% csrf_token %}
-    <p>{{ variant.color.name }} | Size: {{ variant.size }} | KES {{ variant.price }} ({{ variant.stock }} in stock)</p>
-    <input type="number" name="quantity" min="1" max="{{ variant.stock }}" value="1">
-    <button type="submit">Add</button>
-  </form>
-{% endfor %}
+  <label>Quantity:</label>
+  <input type="number" name="quantity" value="1" min="1" max="5">
+
+  <button type="submit">Add to Cart</button>
+</form>
 
 
+<script>
+  document.querySelectorAll('.color-btn').forEach(btn => {
+    btn.addEventListener('click', () => {
+      const colorId = btn.dataset.colorId;
+      fetch(`/ajax/get-variants/${colorId}/`)
+        .then(res => res.json())
+        .then(data => {
+          const select = document.getElementById('variant-select');
+          select.innerHTML = ''; // clear old options
 
-{% comment %}
-  <form method="post" action="{% url 'add_to_cart' variant.id %}">
-    {% csrf_token %}
-    
-    <label>Size: {{ variant.size }}</label><br>
-    <label>Color: {{ variant.color.name }}</label><br>
+          if (data.variants) {
+            data.variants.forEach(variant => {
+              const opt = document.createElement('option');
+              opt.value = variant.id;
+              opt.textContent = `Size: ${variant.size} | Stock: ${variant.stock} | KES ${variant.price}`;
+              select.appendChild(opt);
+            });
+
+            // set form action
+            document.getElementById('variant-form').action = `/cart/add/${data.variants[0].id}/`;
+          }
+        });
+    });
+  });
+
+  document.getElementById('variant-select').addEventListener('change', (e) => {
+    const variantId = e.target.value;
+    document.getElementById('variant-form').action = `/cart/add/${variantId}/`;
+  });
+
+
+
+  fetch(`/cart/add/${variantId}/`, {
+    method: 'POST',
+    headers: {
+      'X-CSRFToken': '{{ csrf_token }}',
+      'Content-Type': 'application/x-www-form-urlencoded'
+    },
+    body: `quantity=${qty}`
+  })
+    .then(res => {
+      if (res.ok) {
+        updateCartIcon();  // 🔁 Refresh icon count
+        alert("Item added to cart!");
+      }
+    });
+
+</script>
+{% endblock content %}
   
-    <label for="quantity">Quantity:</label>
-    <input type="number" name="quantity" id="quantity" min="1" max="{{ variant.stock }}" value="1">
-  
-    <button type="submit">Add to Cart</button>
-  </form>
-{% endcomment %}
-  
-
