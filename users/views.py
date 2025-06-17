@@ -200,7 +200,7 @@ from django.contrib import messages
 
 @login_required
 def dashboard_view(request):
-    return render(request, 'users/dashboard.html', {'user': request.user})
+    return render(request, 'users/user_account.html', {'user': request.user})
 
 
 @login_required
@@ -210,7 +210,7 @@ def update_profile_view(request):
         if form.is_valid():
             form.save()
             messages.success(request, "Your profile has been updated.")
-            return redirect('dashboard')
+            return redirect('account')
     else:
         form = UpdateUserForm(instance=request.user)
     return render(request, 'users/profile_update.html', {'form': form})

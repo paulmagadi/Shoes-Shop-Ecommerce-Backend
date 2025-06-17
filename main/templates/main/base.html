@@ -11,12 +11,8 @@
 </head>
 
 <body>
-    <nav>
-        <a href="{% url 'cart_detail' %}" id="cart-icon">
-            🛒 <span id="cart-count">{{ cart|length }}</span>
-        </a>
-
-    </nav>
+    {% include 'main/partials/navbar.html' %}
+    
     {% block content %}
     {% endblock %}
 

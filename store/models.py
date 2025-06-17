@@ -96,6 +96,11 @@ class Product(models.Model):
         permissions = [('can_approve_product', 'Can approve product for listing')]
 
     def __str__(self): return self.name
+    
+    @property
+    def featured_color(self):
+        return self.colors.filter(is_featured=True).first()
+
 
     def save(self, *args, user=None, **kwargs):
         if not self.slug:
@@ -113,12 +118,18 @@ class Product(models.Model):
 class ProductColor(models.Model):
     product = models.ForeignKey(Product, on_delete=models.CASCADE, related_name='colors')
     color = models.ForeignKey(Color, on_delete=models.CASCADE)
-
+    is_featured = models.BooleanField(default=False)
     class Meta:
         unique_together = ('product', 'color')
 
     def __str__(self):
         return f"{self.product.name} - {self.color.name}"
+    
+    def save(self, *args, **kwargs):
+        if self.is_featured:
+            ProductColor.objects.filter(product=self.product, is_featured=True).exclude(id=self.id).update(is_featured=False)
+        super().save(*args, **kwargs)
+
 
 
 # -----------------------------
@@ -158,6 +169,11 @@ class ProductImage(models.Model):
 
     def __str__(self):
         return f"{self.product_color} Image"
+    
+    def save(self, *args, **kwargs):
+        if self.is_featured:
+            ProductImage.objects.filter(product_color=self.product_color, is_featured=True).exclude(id=self.id).update(is_featured=False)
+        super().save(*args, **kwargs)
 
     @property
     def imageURL(self):

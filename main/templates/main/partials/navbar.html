@@ -1,0 +1,76 @@
+{% load static %}
+
+<header>
+    <div class="header">
+        <div class="logo">
+            <a href="{% url 'home' %}"><img src="{% static 'images/brand/logo2.svg' %}" alt="" width="70px"
+                    title="KickStar"> Home</a>
+        </div>
+
+        <div class="search-bar">
+
+            <form action="" method="get">
+                <input type="search" placeholder="Search Products, Categories, Brands, ..." name="query" required>
+                <i class="ri-search-line"></i>
+                <input type="submit" value="Search">
+            </form>
+        </div>
+
+        <div class="navigation">
+            <div class="help">
+                <i class="ri-questionnaire-line"></i>
+            </div>
+
+
+            {% if user.is_authenticated %}
+            <div class="account">
+                <div class="account-initials">
+                    <a href="">{{ user.first_name|first|upper }}{{ user.last_name|first|upper }}</a>
+                </div>
+                <div class="account-dropdown">
+                    <p class="login"><a href="{% url 'account' %}">Account</a></p>
+                    <hr>
+
+                    <form action="{% url 'logout' %}" method="post">
+                        {% csrf_token %}
+                        <button type="submit">Logout</button>
+                    </form>
+                </div>
+            </div>
+            {% else %}
+            <div class="account">
+                <i class="ri-account-circle-line" title="Account"></i>
+                <div class="account-dropdown">
+                    <p class="login"><a href="{% url 'login' %}?next={{ request.path }}">Login</a></p>
+                    <p class="register"><a href="{% url 'register' %}?next={{ request.path }}">Register</a></p>
+                </div>
+            </div>
+            {% endif %}
+
+
+            <div class="cart">
+                <a href="{% url 'cart_detail' %}" id="cart-icon">
+                    🛒 <span id="cart-count">{{ cart|length }}</span>
+                </a>
+            </div>
+
+        </div>
+    </div>
+
+</header>
+
+
+<div class="header-after"></div>
+
+
+<style>
+    .header {
+        display: flex;
+        justify-content: space-between;
+    }
+
+    .navigation {
+        display: flex;
+        justify-content: space-between;
+    }
+</style>

@@ -56,6 +56,7 @@ class ProductColorInline(admin.StackedInline):
     inlines = []  # We’ll register its children separately
     verbose_name_plural = "Colors for Product"
 
+
     # Custom method to include Variant & Images under ProductColor (requires nested admin or manual management)
     def get_inline_instances(self, request, obj=None):
         return super().get_inline_instances(request, obj)
@@ -100,7 +101,8 @@ class ProductAdmin(admin.ModelAdmin):
 # -----------------------------
 @admin.register(ProductColor)
 class ProductColorAdmin(admin.ModelAdmin):
-    list_display = ("product", "color")
+    list_display = ("product", "color", "is_featured")
+    list_editable = ("is_featured",)
     inlines = [ProductImageInline, VariantInline]
 
 

@@ -1,14 +1,30 @@
 {% extends 'main/base.html' %}
 
 {% block content %}
+
+<div class="product-preview">
+  <img id="main-product-img"
+       src="{{ selected_color.images.first.imageURL }}"
+       data-default="{{ selected_color.images.first.imageURL }}"
+       width="300" height="300">
+</div>
+
+
   <!-- Color selector with data-color-id -->
 <div class="color-selector">
   {% for color in colors %}
-  <button type="button" class="color-btn" data-color-id="{{ color.id }}">
+  <button type="button" class="color-btn"
+          data-color-id="{{ color.id }}"
+          data-image="{{ color.images.first.imageURL }}"
+          onmouseover="previewColorImage(this)"
+          onmouseout="resetColorImage()">
     <img src="{{ color.images.first.imageURL }}" alt="{{ color.color.name }}" width="40">
   </button>
   {% endfor %}
 </div>
+
+
+
 
 <form method="post" action="" id="variant-form">
   {% csrf_token %}
@@ -26,29 +42,56 @@
 
 
 <script>
+  // 🖼️ Preview image on hover
+  function previewColorImage(button) {
+    const newImageUrl = button.getAttribute('data-image');
+    const img = document.getElementById('main-product-img');
+    if (img) img.src = newImageUrl;
+  }
+
+  // 🔁 Reset image on mouse leave
+  function resetColorImage() {
+    const img = document.getElementById('main-product-img');
+    if (img) img.src = img.getAttribute('data-default');
+  }
+</script>
+
+
+
+<script>
   document.querySelectorAll('.color-btn').forEach(btn => {
-    btn.addEventListener('click', () => {
-      const colorId = btn.dataset.colorId;
-      fetch(`/ajax/get-variants/${colorId}/`)
-        .then(res => res.json())
-        .then(data => {
-          const select = document.getElementById('variant-select');
-          select.innerHTML = ''; // clear old options
+  btn.addEventListener('click', () => {
+    const colorId = btn.dataset.colorId;
 
-          if (data.variants) {
-            data.variants.forEach(variant => {
-              const opt = document.createElement('option');
-              opt.value = variant.id;
-              opt.textContent = `Size: ${variant.size} | Stock: ${variant.stock} | KES ${variant.price}`;
-              select.appendChild(opt);
-            });
+    // ✅ Set the new default image permanently after click
+    const newImage = btn.dataset.image;
+    const mainImage = document.getElementById('main-product-img');
+    if (mainImage) {
+      mainImage.src = newImage;
+      mainImage.setAttribute('data-default', newImage);
+    }
 
-            // set form action
-            document.getElementById('variant-form').action = `/cart/add/${data.variants[0].id}/`;
-          }
-        });
-    });
+    // ✅ Fetch sizes for the selected color
+    fetch(`/ajax/get-variants/${colorId}/`)
+      .then(res => res.json())
+      .then(data => {
+        const select = document.getElementById('variant-select');
+        select.innerHTML = '';
+
+        if (data.variants) {
+          data.variants.forEach(variant => {
+            const opt = document.createElement('option');
+            opt.value = variant.id;
+            opt.textContent = `Size: ${variant.size} | Stock: ${variant.stock} | KES ${variant.price}`;
+            select.appendChild(opt);
+          });
+
+          document.getElementById('variant-form').action = `/cart/add/${data.variants[0].id}/`;
+        }
+      });
   });
+});
+
 
   document.getElementById('variant-select').addEventListener('change', (e) => {
     const variantId = e.target.value;

@@ -46,6 +46,6 @@ urlpatterns += [
 from .views import dashboard_view, update_profile_view
 
 urlpatterns += [
-    path('account/', dashboard_view, name='dashboard'),
+    path('account/', dashboard_view, name='account'),
     path('account/edit/', update_profile_view, name='edit_profile'),
 ]
