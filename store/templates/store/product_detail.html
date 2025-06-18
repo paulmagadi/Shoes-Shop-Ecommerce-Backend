@@ -14,8 +14,8 @@
 
         <div class="product-thumbnails">
           {% for image in selected_color.images.all %}
-          <img src="{{ image.imageURL }}" alt="" width="40" onmouseover="swapMainImage('{{ image.imageURL }}')"
-            onmouseout="resetMainImage()">
+          <img src="{{ image.imageURL }}" alt="" width="40" height="40"
+            onmouseover="swapMainImage('{{ image.imageURL }}')" onmouseout="resetMainImage()">
           {% endfor %}
         </div>
       </div>
@@ -39,7 +39,7 @@
 
         <br>
 
-        <form method="post" action="" id="variant-form">
+        <form method="post" action="" id="variant-form" data-ajax="true">
           {% csrf_token %}
 
           <h4>Available colors</h4>
@@ -47,7 +47,7 @@
           <div class="product-colors">
             {% for color in colors %}
             <img src="{{ color.images.first.imageURL }}" alt="{{ color.color.name }}" title="{{ color.color.name }}"
-              width="40" class="color-btn {% if color.id == selected_color.id %}selected{% endif %}"
+              width="40" height="40" class="color-btn {% if color.id == selected_color.id %}selected{% endif %}"
               style="border-radius: 50%; cursor: pointer;" data-color-id="{{ color.id }}"
               data-image="{{ color.images.first.imageURL }}">
             {% endfor %}
@@ -66,10 +66,12 @@
 
           <br><br>
           <label>Quantity:</label>
-          <input type="number" name="quantity" value="1" min="1" max="10" step="1">
 
-          <br><br>
-          <button type="submit">Add to Cart</button>
+          <input type="number" name="quantity" value="1" min="1" max="10" step="1" id="qty-input">
+          <button type="submit" id="add-to-cart-btn">Add to Cart</button>
+
+          <p id="add-cart-message" style="color: green; font-weight: bold;"></p>
+
         </form>
 
         <br>
@@ -136,32 +138,36 @@
 </style>
 
 <!-- 📜 Scripts -->
+
 <script>
+  // ✅ Set form action based on default size on page load
+  document.addEventListener('DOMContentLoaded', function () {
+    const select = document.getElementById('variant-select');
+    const form = document.getElementById('variant-form');
+
+    if (select && form && select.selectedOptions.length > 0) {
+      const variantId = select.selectedOptions[0].value;
+      form.action = `/cart/add/${variantId}/`;
+    }
+  });
+</script>
+
+<script>
+  // 🖼️ Swap preview image on thumbnail hover
   function swapMainImage(url) {
     const img = document.getElementById('main-product-img');
     if (img) img.src = url;
   }
 
-  function resetMainImage() {
-    const img = document.getElementById('main-product-img');
-    if (img) img.src = img.dataset.default;
-  }
+  // 🔁 Reset main image on mouseout (optional)
+  // function resetMainImage() {
+  //   const img = document.getElementById('main-product-img');
+  //   if (img) img.src = img.dataset.default;
+  // }
 
-  function previewColorImage(button) {
-    const newImageUrl = button.getAttribute('data-image');
-    const img = document.getElementById('main-product-img');
-    if (img) img.src = newImageUrl;
-  }
-
-  function resetColorImage() {
-    const img = document.getElementById('main-product-img');
-    if (img) img.src = img.getAttribute('data-default');
-  }
-
-  // Color selection (click) → AJAX to get variants
+  // 🎨 Color selection → update preview, variants, price, stock
   document.querySelectorAll('.color-btn').forEach(btn => {
     btn.addEventListener('click', () => {
-      // 🌈 Update .selected swatch
       document.querySelectorAll('.color-btn').forEach(el => el.classList.remove('selected'));
       btn.classList.add('selected');
 
@@ -172,26 +178,25 @@
         .then(data => {
           if (data.error) return;
 
-          // 🖼️ Update main image
           const mainImg = document.getElementById('main-product-img');
           mainImg.src = data.images[0];
           mainImg.setAttribute('data-default', data.images[0]);
 
-          // 🖼️ Update thumbnails
           const thumbContainer = document.querySelector('.product-thumbnails');
           thumbContainer.innerHTML = '';
           data.images.forEach(src => {
             const thumb = document.createElement('img');
             thumb.src = src;
             thumb.width = 40;
+            thumb.height = 40;
             thumb.addEventListener('mouseover', () => mainImg.src = src);
-            thumb.addEventListener('mouseout', () => mainImg.src = mainImg.dataset.default);
             thumbContainer.appendChild(thumb);
           });
 
-          // 📏 Update size dropdown
+          // 🧱 Update size dropdown
           const select = document.getElementById('variant-select');
           select.innerHTML = '';
+
           data.variants.forEach(v => {
             const opt = document.createElement('option');
             opt.value = v.id;
@@ -201,59 +206,108 @@
             select.appendChild(opt);
           });
 
-          select.addEventListener('change', (e) => {
-            const selected = e.target.selectedOptions[0];
-            const variantId = selected.value;
-            const price = selected.getAttribute('data-price');
-            const salePrice = selected.getAttribute('data-sale-price');
-            const stock = selected.textContent.match(/Stock: (\d+)/)[1]; // extract stock
-
-            // 🛒 Update form action
-            document.getElementById('variant-form').action = `/cart/add/${variantId}/`;
-
-            // 💰 Update price
-            const priceEl = document.getElementById('product-price');
-            if (salePrice && salePrice !== 'null') {
-              priceEl.innerHTML = `<strong style="color:red;">KES ${salePrice}</strong>
-                         <span style="text-decoration: line-through; color: gray;">KES ${price}</span>`;
-            } else {
-              priceEl.innerHTML = `<strong>KES ${price}</strong>`;
-            }
-
-            // 🔢 Update quantity input max
-            const qtyInput = document.querySelector('input[name="quantity"]');
-            qtyInput.max = stock;
-            if (parseInt(qtyInput.value) > parseInt(stock)) {
-              qtyInput.value = 1;
-            }
-          });
-
-
+          // If variants available → trigger price/stock update
           if (data.variants.length > 0) {
             select.dispatchEvent(new Event('change'));
+            document.getElementById('add-to-cart-btn').disabled = false;
+          } else {
+            document.getElementById('add-to-cart-btn').disabled = true;
+            document.getElementById('add-cart-message').textContent = "This color is currently out of stock.";
           }
-
-
-          // 💸 Update price
-          const priceEl = document.getElementById('product-price');
-          if (data.variants.length > 0) {
-            const variant = data.variants[0];
-            document.getElementById('variant-form').action = `/cart/add/${variant.id}/`;
-
-            // Check for sale price
-            if (variant.sale_price && variant.sale_price !== "null") {
-              priceEl.innerHTML = `<strong style="color:red;">KES ${variant.sale_price}</strong>
-                                  <span style="text-decoration: line-through; color: gray;">KES ${variant.price}</span>`;
-            } else {
-              priceEl.innerHTML = `<strong>KES ${variant.price}</strong>`;
-            }
-          }
-
         });
     });
   });
 
+  // 📏 Size selection → update form action, price, max qty
+  document.getElementById('variant-select').addEventListener('change', (e) => {
+    const selected = e.target.selectedOptions[0];
+    const variantId = selected.value;
+    const price = selected.getAttribute('data-price');
+    const salePrice = selected.getAttribute('data-sale-price');
+    const stockMatch = selected.textContent.match(/Stock: (\d+)/);
+    const stock = stockMatch ? stockMatch[1] : 1;
+
+    document.getElementById('variant-form').action = `/cart/add/${variantId}/`;
+
+    const priceEl = document.getElementById('product-price');
+    if (salePrice && salePrice !== 'null') {
+      priceEl.innerHTML = `<strong style="color:red;">KES ${salePrice}</strong>
+                         <span style="text-decoration: line-through; color: gray;">KES ${price}</span>`;
+    } else {
+      priceEl.innerHTML = `<strong>KES ${price}</strong>`;
+    }
+
+    const qtyInput = document.getElementById('qty-input');
+    qtyInput.max = stock;
+    if (parseInt(qtyInput.value) > parseInt(stock)) {
+      qtyInput.value = 1;
+    }
+  });
+
+  // 🛒 AJAX Add to Cart
+  document.addEventListener('DOMContentLoaded', function () {
+    const form = document.getElementById('variant-form');
+    if (!form) {
+      console.error('⚠️ Form not found!');
+      return;
+    }
+
+    form.addEventListener('submit', function (e) {
+      e.preventDefault();
+      console.log("🛒 Submit triggered");
 
 
+      const action = form.action;
+      const quantity = form.querySelector('input[name="quantity"]').value;
+      const csrf = form.querySelector('[name="csrfmiddlewaretoken"]').value;
+
+      fetch(action, {
+        method: 'POST',
+        headers: {
+          'X-CSRFToken': csrf,
+          'X-Requested-With': 'XMLHttpRequest',
+          'Content-Type': 'application/x-www-form-urlencoded'
+        },
+        body: `quantity=${quantity}`
+      })
+        .then(res => {
+          if (!res.ok) {
+            return res.text().then(text => {
+              throw new Error("Server error:\n" + text.slice(0, 300)); // just a snippet
+            });
+          }
+          return res.json();
+        })
+        .then(data => {
+          const message = document.getElementById('add-cart-message');
+          if (data.success) {
+            message.textContent = "Item added to cart!";
+            updateCartIcon();
+          } else {
+            message.textContent = "Error adding to cart.";
+          }
+        })
+        .catch(err => {
+          console.error("🛑 Add to cart error:", err.message);
+          document.getElementById('add-cart-message').textContent = "Server error.";
+        });
+
+    });
+  });
+
+
+  // 🛒 Cart Icon Updater (if not already in base.html)
+  function updateCartIcon() {
+    fetch('/cart/ajax/cart-count/')
+      .then(res => res.json())
+      .then(data => {
+        const icon = document.getElementById('cart-count');
+        if (icon) icon.textContent = data.cart_count;
+      });
+  }
 </script>
+
+
+
+
 {% endblock %}

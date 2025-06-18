@@ -1,26 +1,114 @@
-<h2>Your Cart</h2>
-<table>
-  <tr><th>Product</th><th>Variant</th><th>Qty</th><th>Price</th><th>Actions</th></tr>
-  {% for item in items %}
-  <tr>
-    <td>{{ item.variant.product.name }}</td>
-    <td>{{ item.variant.color.name }} / Size {{ item.variant.size }}</td>
-    <td>
-      <form method="post" action="{% url 'update_cart_item' item.id %}">
-        {% csrf_token %}
-        <input type="number" name="quantity" value="{{ item.quantity }}" min="1" max="{{ item.variant.stock }}">
-        <button type="submit">Update</button>
-      </form>
-    </td>
-    <td>KES {{ item.get_total_price }}</td>
-    <td>
-      <form method="post" action="{% url 'remove_cart_item' item.id %}">
-        {% csrf_token %}
-        <button type="submit">Remove</button>
-      </form>
-    </td>
-  </tr>
-  {% endfor %}
-</table>
+{% extends "main/base.html" %}
+{% block content %}
+<div class="container">
+  <h2>Your Shopping Cart</h2>
 
-<h3>Total: KES {{ total }}</h3>
+  <div id="cart-content">
+    {% if items %}
+    <table class="cart-table">
+      <thead>
+        <tr>
+          <th>Item</th>
+          <th>Size</th>
+          <th>Qty</th>
+          <th>Price</th>
+          <th>Total</th>
+          <th></th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for item in items %}
+        <tr data-item-id="{{ item.id }}">
+          <td>
+            <img src="{{ item.variant.product_color.color.images.first.imageURL }}" width="50">
+            {{ item.variant.product_color.product.name }} ({{ item.variant.product_color.color.name }})
+          </td>
+          <td>{{ item.variant.size.us_size }}</td>
+          <td>
+            <input type="number" min="1" max="{{ item.variant.stock }}" value="{{ item.quantity }}"
+              onchange="updateCartItem({{ item.id }}, this.value)">
+          </td>
+          <td>
+            {% if item.variant.sale_price %}
+              <span style="color:red;">KES {{ item.variant.sale_price }}</span>
+              <span style="text-decoration: line-through; color:gray;">KES {{ item.variant.price }}</span>
+            {% else %}
+              KES {{ item.variant.price }}
+            {% endif %}
+          </td>
+          <td>KES {{ item.get_total_price }}</td>
+          <td><button onclick="removeCartItem({{ item.id }})">🗑</button></td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+
+    <h3>Total: KES {{ total }}</h3>
+
+    {% else %}
+    <p>Your cart is empty 😢</p>
+    {% endif %}
+  </div>
+</div>
+
+<style>
+  .cart-table {
+    width: 100%;
+    border-collapse: collapse;
+  }
+
+  .cart-table th,
+  .cart-table td {
+    border: 1px solid #ddd;
+    padding: 8px;
+  }
+
+  .cart-table img {
+    vertical-align: middle;
+    margin-right: 8px;
+  }
+
+  button {
+    cursor: pointer;
+    background: none;
+    border: none;
+    font-size: 1.2em;
+  }
+</style>
+
+<script>
+  function updateCartItem(itemId, quantity) {
+    fetch(`/cart/update/${itemId}/`, {
+      method: 'POST',
+      headers: {
+        'X-CSRFToken': '{{ csrf_token }}',
+        'X-Requested-With': 'XMLHttpRequest',
+        'Content-Type': 'application/x-www-form-urlencoded'
+      },
+      body: `quantity=${quantity}`
+    })
+      .then(res => res.json())
+      .then(data => {
+        if (data.success) {
+          location.reload(); // Optionally: update only the row
+        }
+      });
+  }
+
+  function removeCartItem(itemId) {
+    fetch(`/cart/remove/${itemId}/`, {
+      method: 'POST',
+      headers: {
+        'X-CSRFToken': '{{ csrf_token }}',
+        'X-Requested-With': 'XMLHttpRequest',
+      }
+    })
+      .then(res => res.json())
+      .then(data => {
+        if (data.success) {
+          document.querySelector(`[data-item-id="${itemId}"]`).remove();
+        }
+      });
+  }
+</script>
+{% endblock %}

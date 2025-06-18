@@ -12,23 +12,22 @@
 
 <body>
     {% include 'main/partials/navbar.html' %}
-    
+
     {% block content %}
     {% endblock %}
 
     <script>
-        // Fetch cart count and update icon
         function updateCartIcon() {
             fetch('/cart/ajax/cart-count/')
                 .then(res => res.json())
                 .then(data => {
-                    document.getElementById('cart-count').textContent = data.cart_count;
+                    const icon = document.getElementById('cart-count');
+                    if (icon) icon.textContent = data.cart_count;
                 });
         }
-
-        // Call this after any add-to-cart action
         updateCartIcon();
     </script>
+
 
     <script src="{% static 'js/main.js' %}"></script>
 </body>

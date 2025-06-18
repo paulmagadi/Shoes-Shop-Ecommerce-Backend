@@ -14,52 +14,29 @@ Shoe Shop Ecommerce
   {% with featured=product.featured_color %}
   <div class="product-card">
     <a href="{% url 'product_detail' product.slug %}">
-      <img src="{{ featured.images.first.imageURL }}" alt="{{ product.name }}" width="150">
-      <h3>{{ product.name }}</h3>
-      <p>{{ product.brand.name }}</p>
-      <p>KES {{ featured.variants.first.price }}</p>
-    </a>
-
-    <!-- Color preview thumbnails -->
-    <div class="color-swatches">
-      {% for color in product.colors.all %}
-      <img src="{{ color.images.first.imageURL }}" alt="{{ color.color.name }}" title="{{ color.color.name }}"
-        width="25" height="25" style="border-radius:50%; border:1px solid #ddd;">
-      {% endfor %}
-    </div>
-  </div>
-  {% endwith %}
-  {% endfor %}
-</div>
-
-
-<div class="product-grid">
-  {% for product in products %}
-  {% with featured=product.featured_color %}
-  <div class="product-card">
-    <a href="{% url 'product_detail' product.slug %}">
       <div class="product-image-wrapper" onmouseover="swapImage(this)" onmouseout="resetImage(this)">
         <img src="{{ featured.images.first.imageURL }}" data-default="{{ featured.images.first.imageURL }}"
           data-hover="{% if featured.images.all|length > 1 %}{{ featured.images.all.1.imageURL }}{% else %}{{ featured.images.first.imageURL }}{% endif %}"
-          class="product-img" width="150">
+          class="product-img product-img-{{ product.id }}" width="200" height="200">
       </div>
       <h3>{{ product.name }}</h3>
       <p>{{ product.brand.name }}</p>
       <p>KES {{ featured.variants.first.price }}</p>
     </a>
 
+    <!-- 🔁 Color Hover Thumbnails -->
     <div class="color-swatches">
       {% for color in product.colors.all %}
       <img src="{{ color.images.first.imageURL }}" alt="{{ color.color.name }}" title="{{ color.color.name }}"
-        width="25" style="border-radius: 50%;">
+        class="color-thumb" width="35" height="35" style="border-radius: 50%; cursor: pointer; object-fit: cover;"
+        onmouseover="previewColor('{{ product.id }}', '{{ color.images.first.imageURL }}')"
+        onmouseout="resetColor('{{ product.id }}')">
       {% endfor %}
     </div>
   </div>
   {% endwith %}
   {% endfor %}
 </div>
-
-
 <script>
   function swapImage(container) {
     const img = container.querySelector('.product-img');
@@ -76,62 +53,25 @@ Shoe Shop Ecommerce
       img.src = defaultSrc;
     }
   }
+
+  function previewColor(productId, imageUrl) {
+    const img = document.querySelector(`.product-img-${productId}`);
+    if (img) img.src = imageUrl;
+  }
+
+  function resetColor(productId) {
+    const img = document.querySelector(`.product-img-${productId}`);
+    if (img) img.src = img.dataset.default;
+  }
 </script>
+
+
+
+
 <style>
-.product-img {
-  transition: all 0.3s ease-in-out;
-}
+  .product-img {
+    transition: all 0.3s ease-in-out;
+    object-fit: cover;
+  }
 </style>
-
-
-
-<div class="product-grid">
-  {% for product in products %}
-    {% with featured=product.featured_color %}
-    <div class="product-card">
-      <a href="{% url 'product_detail' product.slug %}">
-        <div class="product-image-wrapper">
-          <img 
-            src="{{ featured.images.first.imageURL }}" 
-            data-default="{{ featured.images.first.imageURL }}"
-            class="product-img product-img-{{ product.id }}" 
-            width="150">
-        </div>
-        <h3>{{ product.name }}</h3>
-        <p>{{ product.brand.name }}</p>
-        <p>KES {{ featured.variants.first.price }}</p>
-      </a>
-
-      <!-- 🔁 Color Hover Thumbnails -->
-      <div class="color-swatches">
-        {% for color in product.colors.all %}
-          <img 
-            src="{{ color.images.first.imageURL }}" 
-            alt="{{ color.color.name }}"
-            title="{{ color.color.name }}"
-            class="color-thumb" 
-            width="25"
-            style="border-radius: 50%; cursor: pointer;"
-            onmouseover="previewColor('{{ product.id }}', '{{ color.images.first.imageURL }}')"
-            onmouseout="resetColor('{{ product.id }}')"
-          >
-        {% endfor %}
-      </div>
-    </div>
-    {% endwith %}
-  {% endfor %}
-</div>
-<script>
-function previewColor(productId, imageUrl) {
-  const img = document.querySelector(`.product-img-${productId}`);
-  if (img) img.src = imageUrl;
-}
-
-function resetColor(productId) {
-  const img = document.querySelector(`.product-img-${productId}`);
-  if (img) img.src = img.dataset.default;
-}
-</script>
-
-
 {% endblock %}
