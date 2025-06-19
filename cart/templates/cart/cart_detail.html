@@ -45,6 +45,8 @@
 
     <h3>Total: KES {{ total }}</h3>
 
+    <a href="{% url 'checkout' %}">Checkout</a>
+
     {% else %}
     <p>Your cart is empty 😢</p>
     {% endif %}

@@ -1,0 +1,84 @@
+{% extends "main/base.html" %}
+
+{% block content %}
+<div class="container">
+  <h2>Checkout</h2>
+
+  <form method="post" id="checkout-form">
+    {% csrf_token %}
+
+    <h3>Shipping Address</h3>
+    {% if shipping_addresses %}
+      {% for address in shipping_addresses %}
+        <div style="margin-bottom: 10px;">
+          <label>
+            <input type="radio" name="shipping_address" value="{{ address.id }}" {% if forloop.first %}checked{% endif %}>
+            {{ address.full_name }}, {{ address.address }}, {{ address.city }}, {{ address.country }}
+          </label>
+        </div>
+      {% endfor %}
+    {% else %}
+      <p>No shipping addresses found.</p>
+      <a href="{% url 'add_shipping_address' %}?next={% url 'checkout' %}">Add Shipping Address</a>
+
+    {% endif %}
+
+    <hr>
+
+    <h3>Order Summary</h3>
+    <table class="checkout-table">
+      <thead>
+        <tr>
+          <th>Item</th>
+          <th>Size</th>
+          <th>Qty</th>
+          <th>Price</th>
+          <th>Total</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for item in items %}
+        <tr>
+          <td>{{ item.variant.product_color.product.name }} ({{ item.variant.product_color.color.name }})</td>
+          <td>{{ item.variant.size.us_size }}</td>
+          <td>{{ item.quantity }}</td>
+          <td>KES {{ item.variant.sale_price|default:item.variant.price }}</td>
+          <td>KES {{ item.get_total_price }}</td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+
+    <h3 style="margin-top: 20px;">
+      Total: KES {{ total }}
+    </h3>
+
+    <br>
+    <button type="submit" class="btn btn-primary">Place Order</button>
+  </form>
+</div>
+
+<style>
+  .container {
+    max-width: 900px;
+    margin: auto;
+    padding: 1em;
+  }
+
+  .checkout-table {
+    width: 100%;
+    border-collapse: collapse;
+    margin-top: 1em;
+  }
+
+  .checkout-table th, .checkout-table td {
+    border: 1px solid #ddd;
+    padding: 8px;
+  }
+
+  .checkout-table th {
+    background-color: #f9f9f9;
+    text-align: left;
+  }
+</style>
+{% endblock %}

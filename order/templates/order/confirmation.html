@@ -1,0 +1,79 @@
+{% extends "main/base.html" %}
+
+{% block content %}
+<div class="container">
+  <div class="confirmation-box">
+    <h2>✅ Order Placed Successfully!</h2>
+    <p>Thank you, {{ order.user.first_name }}!</p>
+
+    <p>Your order <strong>#{{ order.id }}</strong> has been placed and is being processed.</p>
+
+    <hr>
+
+    <h3>Order Summary</h3>
+    <ul class="order-summary">
+      {% for item in order.items.all %}
+        <li>
+          {{ item.variant.product_color.product.name }} ({{ item.variant.product_color.color.name }}) -
+          Size {{ item.variant.size.us_size }},
+          Qty {{ item.quantity }} -
+          KES {{ item.get_total_price }}
+        </li>
+      {% endfor %}
+    </ul>
+
+    <p><strong>Total Paid:</strong> KES {{ order.get_total_cost }}</p>
+
+    <hr>
+
+    <h4>Shipping To:</h4>
+    <p>
+      {{ order.shipping_address.full_name }}<br>
+      {{ order.shipping_address.address }}<br>
+      {{ order.shipping_address.city }}, {{ order.shipping_address.country }}<br>
+      Phone: {{ order.shipping_address.phone }}
+    </p>
+
+    <a href="{% url 'home' %}" class="btn btn-success">Continue Shopping</a>
+  </div>
+</div>
+
+<style>
+  .container {
+    max-width: 800px;
+    margin: auto;
+    padding: 2em;
+    text-align: center;
+  }
+
+  .confirmation-box {
+    border: 1px solid #ddd;
+    padding: 2em;
+    border-radius: 8px;
+    background: #f9f9f9;
+  }
+
+  .order-summary {
+    list-style-type: none;
+    padding: 0;
+    margin: 1em 0;
+  }
+
+  .order-summary li {
+    margin: 0.5em 0;
+    text-align: left;
+  }
+
+  .btn-success {
+    background-color: #28a745;
+    color: white;
+    padding: 10px 20px;
+    text-decoration: none;
+    border-radius: 4px;
+  }
+
+  .btn-success:hover {
+    background-color: #218838;
+  }
+</style>
+{% endblock %}
