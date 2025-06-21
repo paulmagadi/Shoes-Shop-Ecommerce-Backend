@@ -13,6 +13,10 @@ https://docs.djangoproject.com/en/5.2/ref/settings/
 import os
 from pathlib import Path
 
+from dotenv import load_dotenv
+
+load_dotenv()
+
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
 
@@ -43,7 +47,9 @@ INSTALLED_APPS = [
     'store',
     'cart',
     'order',
+    'mpesa',
     'mptt',
+    
 ]
 
 MIDDLEWARE = [
@@ -171,3 +177,12 @@ DEFAULT_FROM_EMAIL = 'no-reply@shoeshop.com'
 # EMAIL_USE_TLS = True
 # EMAIL_HOST_USER = 'apikey'
 # EMAIL_HOST_PASSWORD = 'your-api-key'
+
+
+MPESA_CONSUMER_KEY = os.getenv("MPESA_CONSUMER_KEY")
+MPESA_CONSUMER_SECRET = os.getenv("MPESA_CONSUMER_SECRET")
+MPESA_SHORTCODE = os.getenv("MPESA_SHORTCODE")
+MPESA_PASSKEY = os.getenv("MPESA_PASSKEY")
+MPESA_BASE_URL = os.getenv("MPESA_BASE_URL")
+MPESA_CALLBACK_URL = os.getenv("MPESA_CALLBACK_URL")
+

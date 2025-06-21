@@ -28,37 +28,37 @@ class ShippingAddress(models.Model):
     def __str__(self):
         return f"{self.full_name}, {self.city} ({'Primary' if self.is_primary else 'Secondary'})"
 
-class Order(models.Model):
-    user = models.ForeignKey(CustomUser, on_delete=models.CASCADE)
-    shipping_address = models.ForeignKey(ShippingAddress, on_delete=models.SET_NULL, null=True)
-    created_at = models.DateTimeField(auto_now_add=True)
-
-    def get_total_cost(self):
-        return sum(item.get_total_price() for item in self.items.all())
-
-    def __str__(self):
-        return f"Order #{self.id}"
-    
 # class Order(models.Model):
-#     STATUS_CHOICES = [
-#         ("pending", "Pending"),
-#         ("processing", "Processing"),
-#         ("shipped", "Shipped"),
-#         ("delivered", "Delivered"),
-#         ("cancelled", "Cancelled"),
-#     ]
-
-#     user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.SET_NULL, null=True)
+#     user = models.ForeignKey(CustomUser, on_delete=models.CASCADE)
 #     shipping_address = models.ForeignKey(ShippingAddress, on_delete=models.SET_NULL, null=True)
-#     status = models.CharField(max_length=20, choices=STATUS_CHOICES, default="pending")
-#     payment_method = models.CharField(max_length=50, default="stripe")  # or "cod", "paypal", etc.
-#     payment_status = models.CharField(max_length=50, default="unpaid")
-#     total_price = models.DecimalField(max_digits=10, decimal_places=2, default=0.00)
 #     created_at = models.DateTimeField(auto_now_add=True)
-#     paid_at = models.DateTimeField(null=True, blank=True)
+
+#     def get_total_cost(self):
+#         return sum(item.get_total_price() for item in self.items.all())
 
 #     def __str__(self):
-#         return f"Order #{self.id} - {self.user}"
+        # return f"Order #{self.id}"
+    
+class Order(models.Model):
+    STATUS_CHOICES = [
+        ("pending", "Pending"),
+        ("processing", "Processing"),
+        ("shipped", "Shipped"),
+        ("delivered", "Delivered"),
+        ("cancelled", "Cancelled"),
+    ]
+
+    user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.SET_NULL, null=True)
+    shipping_address = models.ForeignKey(ShippingAddress, on_delete=models.SET_NULL, null=True)
+    status = models.CharField(max_length=20, choices=STATUS_CHOICES, default="pending")
+    payment_method = models.CharField(max_length=50, default="stripe")  # or "cod", "paypal", etc.
+    payment_status = models.CharField(max_length=50, default="unpaid")
+    total_price = models.DecimalField(max_digits=10, decimal_places=2, default=0.00)
+    created_at = models.DateTimeField(auto_now_add=True)
+    paid_at = models.DateTimeField(null=True, blank=True)
+
+    def __str__(self):
+        return f"Order #{self.id} - {self.user}"
 
 
 class OrderItem(models.Model):

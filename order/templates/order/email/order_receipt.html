@@ -1,0 +1,24 @@
+Hi {{ order.user.first_name }},
+
+Thank you for your order!
+
+Order ID: #{{ order.id }}
+
+Shipping Address:
+{{ order.selected.full_name }}
+{{ order.selected.address }}, {{ order.selected.city }}
+{{ order.selected.country }}
+Phone: {{ order.selected.phone }}
+
+Items:
+{% for item in order.items.all %}
+- {{ item.variant.product_color.product.name }} ({{ item.variant.product_color.color.name }} - Size {{ item.variant.size.us_size }})
+  Qty: {{ item.quantity }} | Price: KES {{ item.price }}
+{% endfor %}
+
+Total: KES {{ order.total }}
+
+We'll notify you once your order has been shipped.
+
+Best regards,  
+{{ site_name }} Team

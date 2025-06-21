@@ -4,27 +4,49 @@
 <div class="container">
   <h2>Checkout</h2>
 
+  <!-- 🏠 Shipping Address -->
   <form method="post" id="checkout-form">
     {% csrf_token %}
 
     <h3>Shipping Address</h3>
-    {% if shipping_addresses %}
-      {% for address in shipping_addresses %}
-        <div style="margin-bottom: 10px;">
+    {% if addresses %}
+      {% for address in addresses %}
+        <div>
           <label>
-            <input type="radio" name="shipping_address" value="{{ address.id }}" {% if forloop.first %}checked{% endif %}>
-            {{ address.full_name }}, {{ address.address }}, {{ address.city }}, {{ address.country }}
+            <input type="radio" name="shipping_address" value="{{ address.id }}"
+              {% if address.id == selected_address.id %}checked{% endif %}>
+            {{ address.full_name }}, {{ address.address }}, {{ address.city }} - {{ address.country }}
           </label>
+          <br>
+          <a href="{% url 'edit_shipping_address' address.id %}?next={% url 'checkout' %}">Edit</a> |
+          <a href="{% url 'delete_shipping_address' address.id %}?next={% url 'checkout' %}">Delete</a>
         </div>
       {% endfor %}
     {% else %}
       <p>No shipping addresses found.</p>
-      <a href="{% url 'add_shipping_address' %}?next={% url 'checkout' %}">Add Shipping Address</a>
-
+      <a href="{% url 'add_shipping_address' %}?next={% url 'checkout' %}">Add one</a>
     {% endif %}
 
     <hr>
 
+    <!-- 💳 Payment Method -->
+    <h3>Payment Method</h3>
+    <label><input type="radio" name="payment_method" value="mpesa" checked> MPesa</label><br>
+    <label><input type="radio" name="payment_method" value="paypal"> PayPal (coming soon)</label><br>
+    <label><input type="radio" name="payment_method" value="cod"> Cash on Delivery</label><br>
+
+    <div id="mpesa-section" style="margin-top: 10px;">
+      <label>Phone Number (MPesa):</label><br>
+      <input type="text" name="phone" id="phone" placeholder="e.g. 254712345678">
+    </div>
+
+    <br>
+    <button type="submit" class="btn btn-primary">Place Order</button>
+    <p id="payment-status" style="color: green;"></p>
+
+    <hr>
+
+    <!-- 🧾 Order Summary -->
     <h3>Order Summary</h3>
     <table class="checkout-table">
       <thead>
@@ -49,12 +71,7 @@
       </tbody>
     </table>
 
-    <h3 style="margin-top: 20px;">
-      Total: KES {{ total }}
-    </h3>
-
-    <br>
-    <button type="submit" class="btn btn-primary">Place Order</button>
+    <h3>Total: KES {{ total }}</h3>
   </form>
 </div>
 
@@ -71,7 +88,8 @@
     margin-top: 1em;
   }
 
-  .checkout-table th, .checkout-table td {
+  .checkout-table th,
+  .checkout-table td {
     border: 1px solid #ddd;
     padding: 8px;
   }
@@ -81,4 +99,80 @@
     text-align: left;
   }
 </style>
+
+<!-- 🚀 Logic -->
+<script>
+  document.getElementById('checkout-form').addEventListener('submit', function (e) {
+    e.preventDefault();
+
+    const method = document.querySelector('input[name="payment_method"]:checked').value;
+    const shipping = document.querySelector('input[name="shipping_address"]:checked');
+    const csrf = document.querySelector('[name="csrfmiddlewaretoken"]').value;
+    const phone = document.getElementById('phone')?.value;
+    const status = document.getElementById('payment-status');
+
+    if (!shipping) {
+      alert("Please select a shipping address.");
+      return;
+    }
+
+    if (method === 'mpesa') {
+      if (!phone || phone.length < 10) {
+        alert("Please enter a valid MPesa phone number.");
+        return;
+      }
+
+      fetch("{% url 'mpesa_checkout' %}", {
+        method: "POST",
+        headers: {
+          "X-CSRFToken": csrf,
+          "X-Requested-With": "XMLHttpRequest",
+          "Content-Type": "application/x-www-form-urlencoded",
+        },
+        body: `phone=${phone}&shipping_address=${shipping.value}`,
+      })
+        .then(res => res.json())
+        .then(data => {
+          if (data.ResponseCode === "0") {
+            window.location.href = "{% url 'mpesa_thank_you' %}";
+          } else {
+            status.textContent = "❌ Failed to initiate MPesa payment.";
+          }
+        })
+        .catch(err => {
+          status.textContent = "⚠️ Server error.";
+          console.error("MPesa error:", err);
+        });
+
+    } else if (method === 'cod') {
+      const form = document.createElement("form");
+      form.method = "POST";
+      form.action = "{% url 'cod_checkout' %}";
+
+      const csrfInput = document.createElement("input");
+      csrfInput.type = "hidden";
+      csrfInput.name = "csrfmiddlewaretoken";
+      csrfInput.value = csrf;
+      form.appendChild(csrfInput);
+
+      const addressInput = document.createElement("input");
+      addressInput.type = "hidden";
+      addressInput.name = "shipping_address";
+      addressInput.value = shipping.value;
+      form.appendChild(addressInput);
+
+      document.body.appendChild(form);
+      form.submit();
+    } else {
+      alert("🚧 PayPal is not yet available.");
+    }
+  });
+
+  document.querySelectorAll('input[name="payment_method"]').forEach(radio => {
+    radio.addEventListener('change', () => {
+      document.getElementById('mpesa-section').style.display =
+        radio.value === 'mpesa' ? 'block' : 'none';
+    });
+  });
+</script>
 {% endblock %}

@@ -1,0 +1,10 @@
+{% extends 'main/base.html' %}
+{% block content %}
+<div class="container" style="text-align: center; padding: 2rem;">
+  <h2>✅ MPesa Request Sent</h2>
+  <p>We've sent a payment request to your phone. Please complete the payment to finalize your order.</p>
+  <p>If you don't see a prompt, ensure your phone number is correct and try again.</p>
+
+  <a href="{% url 'account' %}" class="btn btn-primary">Go to My Orders</a>
+</div>
+{% endblock %}
