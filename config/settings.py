@@ -30,7 +30,7 @@ SECRET_KEY = 'django-insecure-*vu#3vq2-+ek&@a1gfwob&6mddh69^vk0v&nq!jkje7x(fgvn3
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 
-ALLOWED_HOSTS = []
+ALLOWED_HOSTS = ['*']
 
 
 # Application definition
@@ -185,4 +185,8 @@ MPESA_SHORTCODE = os.getenv("MPESA_SHORTCODE")
 MPESA_PASSKEY = os.getenv("MPESA_PASSKEY")
 MPESA_BASE_URL = os.getenv("MPESA_BASE_URL")
 MPESA_CALLBACK_URL = os.getenv("MPESA_CALLBACK_URL")
+
+CSRF_TRUSTED_ORIGINS = [
+    "https://efb4-102-0-21-194.ngrok-free.app",
+]
 

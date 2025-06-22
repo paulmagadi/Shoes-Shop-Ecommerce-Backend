@@ -4,10 +4,10 @@
 <div class="container">
   <h2>Checkout</h2>
 
-  <!-- 🏠 Shipping Address -->
   <form method="post" id="checkout-form">
     {% csrf_token %}
 
+    <!-- 🏠 Shipping Address -->
     <h3>Shipping Address</h3>
     {% if addresses %}
       {% for address in addresses %}
@@ -43,6 +43,7 @@
     <br>
     <button type="submit" class="btn btn-primary">Place Order</button>
     <p id="payment-status" style="color: green;"></p>
+    <p id="countdown-timer" style="font-weight: bold;"></p>
 
     <hr>
 
@@ -100,74 +101,133 @@
   }
 </style>
 
-<!-- 🚀 Logic -->
 <script>
-  document.getElementById('checkout-form').addEventListener('submit', function (e) {
-    e.preventDefault();
+let pollInterval = null;
+let countdownInterval = null;
 
-    const method = document.querySelector('input[name="payment_method"]:checked').value;
-    const shipping = document.querySelector('input[name="shipping_address"]:checked');
-    const csrf = document.querySelector('[name="csrfmiddlewaretoken"]').value;
-    const phone = document.getElementById('phone')?.value;
-    const status = document.getElementById('payment-status');
+function startPolling(transactionId) {
+  const statusEl = document.getElementById('payment-status');
+  const countdownEl = document.getElementById('countdown-timer');
+  let attempts = 0;
+  let timeLeft = 60;
 
-    if (!shipping) {
-      alert("Please select a shipping address.");
+  countdownEl.textContent = `⏳ Time remaining: ${timeLeft}s`;
+  countdownInterval = setInterval(() => {
+    timeLeft--;
+    countdownEl.textContent = `⏳ Time remaining: ${timeLeft}s`;
+    if (timeLeft <= 0) {
+      clearInterval(countdownInterval);
+    }
+  }, 1000);
+
+  pollInterval = setInterval(() => {
+    fetch(`/mpesa/poll/${transactionId}/`)
+      .then(res => res.json())
+      .then(data => {
+        attempts++;
+
+        if (data.status === "success") {
+          clearInterval(pollInterval);
+          clearInterval(countdownInterval);
+          statusEl.textContent = "✅ Payment received. Finalizing order...";
+
+          fetch(`/mpesa/complete/${transactionId}/`)
+            .then(res => res.json())
+            .then(data => {
+              if (data.redirect_url) {
+                window.location.href = data.redirect_url;
+              } else {
+                statusEl.textContent = "Error completing order.";
+              }
+            });
+        } else if (data.status === "failed") {
+          clearInterval(pollInterval);
+          clearInterval(countdownInterval);
+          statusEl.textContent = "❌ Payment failed. Try again.";
+          showRetryButton();
+        }
+
+        if (attempts > 20) {
+          clearInterval(pollInterval);
+          clearInterval(countdownInterval);
+          statusEl.textContent = "⚠️ Payment timed out. Try again.";
+          showRetryButton();
+        }
+      });
+  }, 3000);
+}
+
+function showRetryButton() {
+  const btn = document.createElement('button');
+  btn.textContent = "Retry Payment";
+  btn.className = "btn btn-warning";
+  btn.addEventListener("click", () => location.reload());
+  document.getElementById("payment-status").after(btn);
+}
+</script>
+
+<script>
+document.getElementById('checkout-form').addEventListener('submit', function (e) {
+  e.preventDefault();
+
+  const method = document.querySelector('input[name="payment_method"]:checked').value;
+  const shipping = document.querySelector('input[name="shipping_address"]:checked');
+  const csrf = document.querySelector('[name="csrfmiddlewaretoken"]').value;
+  const phone = document.getElementById('phone')?.value;
+  const status = document.getElementById('payment-status');
+
+  if (!shipping) {
+    alert("Please select a shipping address.");
+    return;
+  }
+
+  if (method === 'mpesa') {
+    if (!phone || phone.length < 10) {
+      alert("Please enter a valid MPesa phone number.");
       return;
     }
 
-    if (method === 'mpesa') {
-      if (!phone || phone.length < 10) {
-        alert("Please enter a valid MPesa phone number.");
-        return;
+    fetch("{% url 'initiate_mpesa_payment' %}", {
+      method: "POST",
+      headers: {
+        "X-CSRFToken": csrf,
+        "X-Requested-With": "XMLHttpRequest",
+        "Content-Type": "application/x-www-form-urlencoded",
+      },
+      body: `phone=${phone}&shipping_address=${shipping.value}`,
+    })
+    .then(res => res.json())
+    .then(data => {
+      if (data.success && data.transaction_id) {
+        status.textContent = "✅ STK Push sent. Awaiting confirmation...";
+        startPolling(data.transaction_id);
+      } else {
+        status.textContent = "❌ Failed to initiate MPesa payment.";
       }
+    })
+    .catch(err => {
+      status.textContent = "⚠️ Server error.";
+      console.error("MPesa error:", err);
+    });
 
-      fetch("{% url 'mpesa_checkout' %}", {
-        method: "POST",
-        headers: {
-          "X-CSRFToken": csrf,
-          "X-Requested-With": "XMLHttpRequest",
-          "Content-Type": "application/x-www-form-urlencoded",
-        },
-        body: `phone=${phone}&shipping_address=${shipping.value}`,
-      })
-        .then(res => res.json())
-        .then(data => {
-          if (data.ResponseCode === "0") {
-            window.location.href = "{% url 'mpesa_thank_you' %}";
-          } else {
-            status.textContent = "❌ Failed to initiate MPesa payment.";
-          }
-        })
-        .catch(err => {
-          status.textContent = "⚠️ Server error.";
-          console.error("MPesa error:", err);
-        });
+  } else if (method === 'cod') {
+    const form = document.createElement("form");
+    form.method = "POST";
+    form.action = "{% url 'cod_checkout' %}";
 
-    } else if (method === 'cod') {
-      const form = document.createElement("form");
-      form.method = "POST";
-      form.action = "{% url 'cod_checkout' %}";
+    form.innerHTML = `
+      <input type="hidden" name="csrfmiddlewaretoken" value="${csrf}">
+      <input type="hidden" name="shipping_address" value="${shipping.value}">
+    `;
 
-      const csrfInput = document.createElement("input");
-      csrfInput.type = "hidden";
-      csrfInput.name = "csrfmiddlewaretoken";
-      csrfInput.value = csrf;
-      form.appendChild(csrfInput);
+    document.body.appendChild(form);
+    form.submit();
+  } else {
+    alert("🚧 PayPal is not yet available.");
+  }
+});
 
-      const addressInput = document.createElement("input");
-      addressInput.type = "hidden";
-      addressInput.name = "shipping_address";
-      addressInput.value = shipping.value;
-      form.appendChild(addressInput);
-
-      document.body.appendChild(form);
-      form.submit();
-    } else {
-      alert("🚧 PayPal is not yet available.");
-    }
-  });
-
+// Toggle phone input
   document.querySelectorAll('input[name="payment_method"]').forEach(radio => {
     radio.addEventListener('change', () => {
       document.getElementById('mpesa-section').style.display =

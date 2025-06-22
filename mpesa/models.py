@@ -1,6 +1,6 @@
 from django.db import models
 from django.conf import settings
-from order.models import Order
+from order.models import Order, ShippingAddress
 
 class Transaction(models.Model):
     STATUS_CHOICES = [
@@ -11,7 +11,7 @@ class Transaction(models.Model):
     ]
 
     user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.SET_NULL, null=True)
-    order = models.ForeignKey(Order, on_delete=models.CASCADE, related_name='transactions')
+    order = models.ForeignKey(Order, null=True, blank=True, on_delete=models.SET_NULL)
     phone_number = models.CharField(max_length=15)
     mpesa_receipt_number = models.CharField(max_length=30, null=True, blank=True)
     amount = models.DecimalField(max_digits=10, decimal_places=2)
@@ -20,6 +20,7 @@ class Transaction(models.Model):
     response_description = models.TextField(null=True, blank=True)
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
+    shipping_address = models.ForeignKey(ShippingAddress, null=True, blank=True, on_delete=models.SET_NULL)
 
     class Meta:
         ordering = ['-created_at']
