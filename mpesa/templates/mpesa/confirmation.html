@@ -1,0 +1,19 @@
+{% extends "main/base.html" %}
+{% block content %}
+<div class="container">
+  <h2>🎉 Order Confirmed</h2>
+  <p>Thank you for your purchase, {{ request.user.first_name }}!</p>
+  <p>Order ID: <strong>#{{ order.id }}</strong></p>
+  <p>Status: <strong>{{ order.status|capfirst }}</strong></p>
+
+  <h3>Items</h3>
+  <ul>
+    {% for item in order.items.all %}
+      <li>{{ item.variant.product_color.product.name }} ({{ item.variant.product_color.color.name }} - Size {{ item.variant.size.us_size }}) × {{ item.quantity }}</li>
+    {% endfor %}
+  </ul>
+
+  <p><strong>Total Paid:</strong> KES {{ order.total_price }}</p>
+  <p><strong>Shipping to:</strong> {{ order.shipping_address.full_name }}, {{ order.shipping_address.city }}, {{ order.shipping_address.country }}</p>
+</div>
+{% endblock %}

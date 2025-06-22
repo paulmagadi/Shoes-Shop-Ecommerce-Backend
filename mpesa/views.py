@@ -1,55 +1,23 @@
-
+import json
+from datetime import timezone
 
 from django.http import JsonResponse
-from django.shortcuts import get_object_or_404
-from django.urls import reverse
-from cart.models import Cart, CartItem
-from cart.views import get_or_create_cart
-from mpesa.api import  send_stk_push
-from django.views.decorators.http import require_POST
+from django.shortcuts import render, get_object_or_404
 from django.views.decorators.csrf import csrf_exempt
+from django.views.decorators.http import require_POST
+from django.contrib.auth.decorators import login_required
+from django.db import transaction
+from django.contrib import messages
+
+from cart.models import CartItem
+from cart.views import get_or_create_cart
+from mpesa.api import send_stk_push
 from order.models import Order, OrderItem, ShippingAddress
 from users.models import CustomUser
 
-from django.contrib.auth.decorators import login_required
-from django.db import transaction
 
-# @login_required
-# @require_POST
-# @transaction.atomic
-# def mpesa_checkout_view(request):
-#     phone = request.POST.get("phone")
-#     shipping_address_id = request.POST.get("shipping_address")
-
-#     cart = get_or_create_cart(request)
-#     items = CartItem.objects.filter(cart=cart)
-
-#     if not items.exists():
-#         return JsonResponse({"error": "Cart is empty."}, status=400)
-
-#     shipping_address = get_object_or_404(ShippingAddress, id=shipping_address_id, user=request.user)
-
-#     total = sum(item.get_total_price() for item in items)
-
-    # # Initiate STK Push
-    # callback_url = request.build_absolute_uri(reverse("mpesa_callback"))
-    # response = initiate_stk_push(
-    #     phone=phone,
-    #     amount=int(total),
-    #     account_reference=f"user_{request.user.id}",
-    #     callback_url=callback_url,
-    #     description="Shoes Order"
-    # )
-
-    # # Store temporary order in session (we’ll create it on callback success)
-    # request.session["pending_order"] = {
-    #     "shipping_address_id": shipping_address.id,
-    #     "phone": phone,
-    #     "total": float(total)
-    # }
-
-    # return JsonResponse(response)
-    
+from mpesa.models import Transaction  
+from mpesa.models import Transaction
 
 @login_required
 @require_POST
@@ -69,6 +37,7 @@ def mpesa_checkout_view(request):
     shipping_address = get_object_or_404(ShippingAddress, id=shipping_address_id, user=request.user)
     total = sum(item.get_total_price() for item in items)
 
+    # ✅ Create the Order in pending mode
     order = Order.objects.create(
         user=request.user,
         shipping_address=shipping_address,
@@ -88,69 +57,82 @@ def mpesa_checkout_view(request):
             quantity=item.quantity,
             price=item.variant.sale_price or item.variant.price
         )
+
+        transaction = Transaction.objects.create(
+            user=request.user,
+            order=order,
+            phone_number=phone,
+            amount=total,
+            status="initiated",
+            checkout_request_id=response.get("CheckoutRequestID"),
+            response_description=response.get("ResponseDescription")
+        )
+
         item.variant.stock -= item.quantity
         item.variant.save()
 
     cart.items.all().delete()
 
-    # 🔁 Send STK push
+    # 🔁 Initiate STK Push
     response = send_stk_push(phone, total, order.id)
     return JsonResponse(response)
 
 
-
-
 @csrf_exempt
 @transaction.atomic
-def mpesa_callback(request):
-    import json
-    data = json.loads(request.body)
+def mpesa_payment_callback(request):
+    try:
+        data = json.loads(request.body)
+        callback = data["Body"]["stkCallback"]
+        result_code = callback["ResultCode"]
+        metadata = callback.get("CallbackMetadata", {}).get("Item", [])
 
-    result_code = data['Body']['stkCallback']['ResultCode']
-    metadata = data['Body']['stkCallback'].get('CallbackMetadata')
+        phone = next((item["Value"] for item in metadata if item["Name"] == "PhoneNumber"), None)
+        receipt = next((item["Value"] for item in metadata if item["Name"] == "MpesaReceiptNumber"), None)
+        amount = next((item["Value"] for item in metadata if item["Name"] == "Amount"), None)
 
-    if result_code == 0:
-        phone = next((i["Value"] for i in metadata["Item"] if i["Name"] == "PhoneNumber"), None)
+        # if result_code == 0 and phone:
+        #     order = Order.objects.filter(payment_status="pending", user__phone=phone).latest("created_at")
+        #     order.payment_status = "paid"
+        #     order.status = "processing"
+        #     order.paid_at = timezone.now()
+        #     order.save()
+            
 
-        # Retrieve order data (in real apps, track by CheckoutRequestID)
-        user = CustomUser.objects.filter(email="...")  # Add logic to find user by phone if needed
+        # After processing the successful callback:
+        if result_code == 0 and phone:
+            order = Order.objects.filter(payment_status="pending", user__phone=phone).latest("created_at")
+            order.payment_status = "paid"
+            order.status = "processing"
+            order.paid_at = timezone.now()
+            order.save()
 
-        # You can store more precise mapping in session/db
-        pending_data = request.session.get("pending_order")
-        if pending_data:
-            address = ShippingAddress.objects.get(id=pending_data["shipping_address_id"])
-            cart = Cart.objects.get(user=user)
-            items = CartItem.objects.filter(cart=cart)
-
-            # Create Order
-            order = Order.objects.create(
-                user=user,
-                shipping_address=address,
-                total_price=pending_data["total"],
-                payment_method="mpesa",
-                payment_status="paid"
+            # ✅ Update transaction
+            Transaction.objects.filter(
+                order=order, phone_number=phone, status="initiated"
+            ).update(
+                status="success",
+                mpesa_receipt_number=mpesa_receipt,
             )
-
-            for item in items:
-                OrderItem.objects.create(
-                    order=order,
-                    variant=item.variant,
-                    quantity=item.quantity,
-                    price=item.variant.sale_price or item.variant.price
-                )
-                item.variant.stock -= item.quantity
-                item.variant.save()
-
-            cart.items.all().delete()
-            # Optionally clear session['pending_order']
-
-    return JsonResponse({"ResultCode": 0, "ResultDesc": "OK"})
+        else:
+            # Log as failed
+            Transaction.objects.filter(
+                phone_number=phone, status="initiated"
+            ).update(status="failed")
 
 
-# mpesa/views.py
-from django.shortcuts import render
-from django.contrib.auth.decorators import login_required
+    except Exception as e:
+        print("⚠️ MPesa callback error:", e)
+
+    return JsonResponse({"ResultCode": 0, "ResultDesc": "Confirmation received successfully"})
+
 
 @login_required
 def mpesa_thank_you(request):
     return render(request, 'mpesa/thank_you.html')
+
+
+@login_required
+def order_confirmation_view(request, order_id):
+    order = get_object_or_404(Order, id=order_id, user=request.user)
+    return render(request, "order/confirmation.html", {"order": order})
