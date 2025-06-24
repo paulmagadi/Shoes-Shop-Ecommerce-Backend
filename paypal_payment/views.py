@@ -132,7 +132,7 @@ from django.conf import settings
 
 def send_order_confirmation_email(user, order):
     subject = f"Order Confirmation - #{order.id}"
-    message = render_to_string("emails/order_confirmation_email.txt", {
+    message = render_to_string("paypal_payment/emails/order_confirmation_email.txt", {
         "user": user,
         "order": order,
     })
