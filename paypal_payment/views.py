@@ -2,120 +2,144 @@ from django.shortcuts import render, redirect, get_object_or_404
 from django.conf import settings
 from django.urls import reverse
 from django.utils import timezone
-from django.contrib import messages
 from django.contrib.auth.decorators import login_required
 from django.db import transaction
-from django.views.decorators.http import require_GET, require_POST
-from django.http import HttpResponseBadRequest
+from django.contrib import messages
+from django.views.decorators.csrf import csrf_exempt
 
 from paypal.standard.forms import PayPalPaymentsForm
 
-from cart.views import get_or_create_cart
 from cart.models import CartItem
+from cart.views import get_or_create_cart
 from order.models import Order, OrderItem, ShippingAddress
+from paypal_payment.models import PayPalTransaction
 
 
-@require_GET
+# 🔁 Prepare and display PayPal payment form
 @login_required
-def start_paypal_payment(request, order_id):
-    """
-    Initiates the PayPal redirect after creating the order.
-    """
-    order = get_object_or_404(Order, id=order_id, user=request.user)
-    host = request.get_host()
+@transaction.atomic
+@csrf_exempt  # CSRF exempt to allow POST redirect from frontend
+def start_paypal_payment(request):
+    if request.method != "POST":
+        return redirect("checkout")
+
+    shipping_address_id = request.POST.get("shipping_address")
+    shipping_address = get_object_or_404(ShippingAddress, id=shipping_address_id, user=request.user)
+
+    cart = get_or_create_cart(request)
+    items = cart.items.select_related("variant__product_color__product", "variant__size")
+    if not items.exists():
+        return redirect("cart_detail")
+
+    total = sum(item.get_total_price() for item in items)
+    invoice_id = f"{request.user.id}-{int(timezone.now().timestamp())}"
 
     paypal_dict = {
         "business": settings.PAYPAL_RECEIVER_EMAIL,
-        "amount": order.total_price,
-        "item_name": f"Order #{order.id}",
-        "invoice": str(order.id),
+        "amount": total,
+        "item_name": f"Order for {request.user.email}",
+        "invoice": invoice_id,
         "currency_code": "USD",
-        "notify_url": f"http://{host}{reverse('paypal-ipn')}",
-        "return_url": f"http://{host}{reverse('paypal_success')}?order_id={order.id}",
-        "cancel_return": f"http://{host}{reverse('paypal_cancel')}",
+        "notify_url": f"https://a989-102-0-21-194.ngrok-free.app{reverse('paypal-ipn')}",
+        "return": request.build_absolute_uri(reverse('paypal_success')),
+        "cancel_return": request.build_absolute_uri(reverse('paypal_cancel')),
+        "rm": "2",  # POST return method for PayPal
+        "custom": str(request.user.id),
     }
 
     form = PayPalPaymentsForm(initial=paypal_dict)
-    return render(request, "paypal_payment/pay.html", {"form": form})
+
+    return render(request, "paypal_payment/pay.html", {
+        "form": form,
+        "cart_items": items,
+        "total": total,
+    })
 
 
-@require_POST
+# ✅ Handle successful PayPal payment return (fallback if IPN fails)
 @login_required
 @transaction.atomic
-def create_paypal_order(request):
-    """
-    Creates a pending order and redirects user to PayPal gateway.
-    """
-    shipping_address_id = request.POST.get("shipping_address")
-    if not shipping_address_id:
-        return HttpResponseBadRequest("Missing shipping address.")
+@csrf_exempt  # CSRF exempt to allow POST redirect from frontend
 
-    shipping_address = get_object_or_404(ShippingAddress, id=shipping_address_id, user=request.user)
+def paypal_success(request):
+    tx_id = request.GET.get("tx") or request.GET.get("txnid")
+    if not tx_id:
+        return redirect("checkout")
+
+    # Prevent duplicate order creation
+    existing = Order.objects.filter(transaction_id=tx_id, user=request.user).first()
+    if existing:
+        return render(request, "paypal_payment/paypal_success.html", {"order": existing})
+
     cart = get_or_create_cart(request)
-    items = cart.items.select_related("variant__product_color__product", "variant__size")
-
+    items = CartItem.objects.filter(cart=cart)
     if not items.exists():
         return redirect("cart_detail")
+
+    shipping_address = ShippingAddress.objects.filter(user=request.user, is_primary=True).first()
+    if not shipping_address:
+        return redirect("checkout")
 
     total = sum(item.get_total_price() for item in items)
 
     order = Order.objects.create(
         user=request.user,
         shipping_address=shipping_address,
-        status="pending",
-        payment_method="paypal",
-        payment_status="unpaid",
         total_price=total,
+        status="processing",
+        payment_method="paypal",
+        payment_status="paid",
+        transaction_id=tx_id,
+        paid_at=timezone.now(),
     )
-
-    return redirect("start_paypal_payment", order_id=order.id)
-
-
-@login_required
-@transaction.atomic
-def paypal_success(request):
-    """
-    Finalizes the order after PayPal redirects back (non-IPN fallback).
-    """
-    order_id = request.GET.get("order_id")
-    tx_id = request.GET.get("tx") or request.GET.get("txnid")
-
-    if not order_id:
-        return HttpResponseBadRequest("Missing order_id")
-
-    order = get_object_or_404(Order, id=order_id, user=request.user)
-
-    if order.payment_status == "paid":
-        return render(request, "paypal_payment/paypal_success.html", {"order": order})
-
-    cart = get_or_create_cart(request)
-    items = CartItem.objects.filter(cart=cart)
 
     for item in items:
         OrderItem.objects.create(
             order=order,
             variant=item.variant,
             quantity=item.quantity,
-            price=item.variant.sale_price or item.variant.price
+            price=item.variant.sale_price or item.variant.price,
         )
         item.variant.stock -= item.quantity
         item.variant.save()
 
-    cart.items.all().delete()
+    PayPalTransaction.objects.get_or_create(
+        order=order,
+        user=request.user,
+        transaction_id=tx_id,
+        defaults={
+            'amount': order.total_price,
+            'status': 'completed',
+            'confirmed_at': timezone.now()
+        }
+    )
 
-    order.payment_status = "paid"
-    order.status = "processing"
-    order.paid_at = timezone.now()
-    if tx_id:
-        order.transaction_id = tx_id
-    order.save()
+    cart.items.all().delete()
+    send_order_confirmation_email(request.user, order)
 
     return render(request, "paypal_payment/paypal_success.html", {"order": order})
 
 
+# ❌ Handle cancellation
 def paypal_cancel(request):
-    """
-    Called when user cancels PayPal payment.
-    """
     messages.warning(request, "Payment was cancelled.")
     return render(request, "paypal_payment/cancel.html")
+
+
+from django.core.mail import send_mail
+from django.template.loader import render_to_string
+from django.conf import settings
+
+def send_order_confirmation_email(user, order):
+    subject = f"Order Confirmation - #{order.id}"
+    message = render_to_string("emails/order_confirmation_email.txt", {
+        "user": user,
+        "order": order,
+    })
+    send_mail(
+        subject,
+        message,
+        settings.DEFAULT_FROM_EMAIL,
+        [user.email],
+        fail_silently=False,
+    )

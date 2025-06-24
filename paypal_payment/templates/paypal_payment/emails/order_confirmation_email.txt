@@ -1,0 +1,13 @@
+Hi {{ user.first_name|default:user.username }},
+
+Thank you for your order!
+
+🧾 Order ID: {{ order.id }}
+📦 Status: {{ order.status }}
+💳 Payment Method: {{ order.payment_method|title }}
+✅ Transaction ID: {{ order.transaction_id }}
+💰 Total: ${{ order.total_price }}
+
+We will notify you when your order ships.
+
+- The {{ settings.SITE_NAME|default:"Shop" }} Team

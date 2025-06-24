@@ -190,10 +190,17 @@ MPESA_CALLBACK_URL = os.getenv("MPESA_CALLBACK_URL")
 
 CSRF_TRUSTED_ORIGINS = [
     "https://8d9f-102-0-21-194.ngrok-free.app",
+    "https://a989-102-0-21-194.ngrok-free.app",
+    "https://www.paypal.com",
+    "https://www.sandbox.paypal.com"
 ]
 
 
 
+
+
 # INSTALLED_APPS += ['paypal.standard.ipn']
-PAYPAL_RECEIVER_EMAIL = os.getenv("PAYPAL_RECEIVER_EMAIL")
+# PAYPAL_RECEIVER_EMAIL = os.getenv("PAYPAL_RECEIVER_EMAIL")
+
+PAYPAL_RECEIVER_EMAIL = "sb-lmuzt31070117@personal.example.com"
 PAYPAL_TEST = True

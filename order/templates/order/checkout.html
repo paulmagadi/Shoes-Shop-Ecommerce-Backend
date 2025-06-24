@@ -221,11 +221,20 @@ document.getElementById('checkout-form').addEventListener('submit', function (e)
   } else if (method === 'paypal') {
     const form = document.createElement("form");
     form.method = "POST";
-    form.action = "{% url 'create_paypal_order' %}";
-    form.innerHTML = `
-      <input type="hidden" name="csrfmiddlewaretoken" value="${csrf}">
-      <input type="hidden" name="shipping_address" value="${shipping.value}">
-    `;
+    form.action = "{% url 'start_paypal_payment' %}";
+
+    const csrfInput = document.createElement("input");
+    csrfInput.type = "hidden";
+    csrfInput.name = "csrfmiddlewaretoken";
+    csrfInput.value = csrf;
+    form.appendChild(csrfInput);
+
+    const addressInput = document.createElement("input");
+    addressInput.type = "hidden";
+    addressInput.name = "shipping_address";
+    addressInput.value = shipping.value;
+    form.appendChild(addressInput);
+
     document.body.appendChild(form);
     form.submit();
   }
