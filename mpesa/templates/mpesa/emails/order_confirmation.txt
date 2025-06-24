@@ -1,0 +1,16 @@
+Hi {{ user.first_name }},
+
+Thank you for your order #{{ order.id }}!
+
+Order Total: KES {{ order.total_price }}
+Shipping to: {{ shipping.full_name }}, {{ shipping.city }}, {{ shipping.country }}
+
+Items:
+{% for item in items %}
+- {{ item.variant.product_color.product.name }} ({{ item.variant.product_color.color.name }}) - {{ item.quantity }} x {{ item.price }} KES
+{% endfor %}
+
+We’ll notify you when your order ships.
+
+Thanks again,
+{{ settings.SITE_NAME }}

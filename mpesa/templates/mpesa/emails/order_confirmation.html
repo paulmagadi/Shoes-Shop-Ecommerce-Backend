@@ -1,0 +1,47 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <style>
+    body { font-family: Arial, sans-serif; line-height: 1.6; color: #333; }
+    .container { max-width: 600px; margin: auto; padding: 20px; border: 1px solid #eee; }
+    .header { font-size: 24px; margin-bottom: 20px; }
+    .item { border-bottom: 1px solid #ddd; padding: 10px 0; }
+    .footer { font-size: 14px; margin-top: 30px; color: #777; }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <div class="header">Thank you for your order, {{ user.first_name }}!</div>
+
+    <p>We’ve received your order <strong>#{{ order.id }}</strong>. Here's a summary:</p>
+
+    <p><strong>Shipping to:</strong><br>
+      {{ shipping.full_name }}<br>
+      {{ shipping.address }}<br>
+      {{ shipping.city }}, {{ shipping.country }}
+    </p>
+
+    <h3>Order Summary:</h3>
+    {% for item in items %}
+      <div class="item">
+        
+        {% comment %}
+            <img src="{{ item.variant.product_color.product.image.url }}" width="80" style="float:right; margin-left: 10px;">
+        {% endcomment %}
+            
+        <strong>{{ item.variant.product_color.product.name }}</strong> ({{ item.variant.product_color.color.name }})<br>
+        Qty: {{ item.quantity }} &mdash; KES {{ item.price }} each<br>
+        <strong>Total:</strong> KES {{ item.get_total_price }}
+      </div>
+    {% endfor %}
+
+    <p><strong>Grand Total:</strong> KES {{ order.total_price }}</p>
+
+    <div class="footer">
+      You’ll get another email when your order ships.<br>
+      Thank you for shopping with {{ settings.SITE_NAME }}!
+    </div>
+  </div>
+</body>
+</html>

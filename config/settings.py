@@ -48,6 +48,8 @@ INSTALLED_APPS = [
     'cart',
     'order',
     'mpesa',
+    'paypal_payment',
+    'paypal.standard.ipn',
     'mptt',
     
 ]
@@ -187,6 +189,11 @@ MPESA_BASE_URL = os.getenv("MPESA_BASE_URL")
 MPESA_CALLBACK_URL = os.getenv("MPESA_CALLBACK_URL")
 
 CSRF_TRUSTED_ORIGINS = [
-    "https://efb4-102-0-21-194.ngrok-free.app",
+    "https://8d9f-102-0-21-194.ngrok-free.app",
 ]
 
+
+
+# INSTALLED_APPS += ['paypal.standard.ipn']
+PAYPAL_RECEIVER_EMAIL = os.getenv("PAYPAL_RECEIVER_EMAIL")
+PAYPAL_TEST = True

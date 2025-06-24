@@ -12,4 +12,7 @@ urlpatterns = [
     path('cart/', include('cart.urls')),
     path('checkout/', include('order.urls')),
     path('', include('mpesa.urls')),
+    path('paypal/', include('paypal_payment.urls')),
+    path('paypal/', include("paypal.standard.ipn.urls")),
+
 ]+ static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)

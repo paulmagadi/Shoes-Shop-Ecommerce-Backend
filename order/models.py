@@ -54,6 +54,7 @@ class Order(models.Model):
     payment_method = models.CharField(max_length=50, default="stripe")  # or "cod", "paypal", etc.
     payment_status = models.CharField(max_length=50, default="unpaid")
     total_price = models.DecimalField(max_digits=10, decimal_places=2, default=0.00)
+    transaction_id = models.CharField(max_length=100, null=True, blank=True)
     created_at = models.DateTimeField(auto_now_add=True)
     paid_at = models.DateTimeField(null=True, blank=True)
 

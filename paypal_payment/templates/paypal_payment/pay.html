@@ -1,0 +1,35 @@
+{% extends "main/base.html" %}
+
+{% block content %}
+<div class="container text-center" style="margin-top: 3em;">
+  <h2>Redirecting to PayPal...</h2>
+  <p>Please wait while we redirect you to PayPal to complete your payment.</p>
+  <p>If you're not redirected automatically, click the button below:</p>
+
+  <div style="margin-top: 2em;">
+    {{ form.as_p }}
+    <form action="https://www.sandbox.paypal.com/cgi-bin/webscr" method="post" id="paypal-form">
+      {{ form }}
+      <button type="submit" class="btn btn-primary">Pay Now with PayPal</button>
+    </form>
+  </div>
+</div>
+
+<script>
+  // Auto-submit form after short delay
+  setTimeout(function() {
+    document.getElementById('paypal-form').submit();
+  }, 2000);
+</script>
+
+<style>
+  .container {
+    max-width: 600px;
+    margin: auto;
+    padding: 2em;
+    border: 1px solid #ccc;
+    border-radius: 8px;
+    background: #fafafa;
+  }
+</style>
+{% endblock %}

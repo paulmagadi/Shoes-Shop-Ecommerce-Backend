@@ -1,0 +1,134 @@
+{% extends "main/base.html" %}
+
+{% block content %}
+<div class="container">
+  <div class="success-box">
+    <h2>✅ Payment Successful</h2>
+    <p>Thank you, <strong>{{ order.user.first_name }}</strong>. Your order <strong>#{{ order.id }}</strong> has been placed successfully.</p>
+
+    <div class="order-summary">
+      <h4>📦 Order Summary</h4>
+      <table>
+        <thead>
+          <tr>
+            <th>Item</th>
+            <th>Size</th>
+            <th>Qty</th>
+            <th>Price</th>
+            <th>Total</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for item in order.items.all %}
+          <tr>
+            <td>{{ item.variant.product_color.product.name }} ({{ item.variant.product_color.color.name }})</td>
+            <td>{{ item.variant.size.us_size }}</td>
+            <td>{{ item.quantity }}</td>
+            <td>KES {{ item.price }}</td>
+            <td>KES {{ item.get_total_price }}</td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+
+      <p class="total"><strong>Total Paid:</strong> KES {{ order.total_price }}</p>
+    </div>
+
+    <div class="details">
+      <h4>🚚 Shipping To</h4>
+      <p>
+        {{ order.shipping_address.full_name }}<br>
+        {{ order.shipping_address.address }}<br>
+        {{ order.shipping_address.city }}, {{ order.shipping_address.country }}<br>
+        Phone: {{ order.shipping_address.phone }}
+      </p>
+
+      <h4>💳 Payment Details</h4>
+      <p>
+        Method: PayPal<br>
+        Status: {{ order.payment_status|title }}<br>
+        Paid On: {{ order.paid_at|date:"D, M d, Y H:i" }}<br>
+        <strong>Transaction ID:</strong> {{ order.transaction_id }}
+      </p>
+    </div>
+
+    <div class="buttons">
+      <a href="{% url 'home' %}" class="btn btn-primary">Continue Shopping</a>
+      <a href="{% url 'account' %}" class="btn btn-secondary">My Orders</a>
+    </div>
+  </div>
+</div>
+
+<style>
+  .container {
+    max-width: 800px;
+    margin: 40px auto;
+    padding: 2em;
+  }
+
+  .success-box {
+    background-color: #f0fff4;
+    border: 1px solid #c6f6d5;
+    border-radius: 8px;
+    padding: 2em;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+  }
+
+  .success-box h2 {
+    color: #2f855a;
+  }
+
+  .order-summary table {
+    width: 100%;
+    border-collapse: collapse;
+    margin-top: 15px;
+  }
+
+  .order-summary th, .order-summary td {
+    border: 1px solid #ddd;
+    padding: 8px;
+    text-align: left;
+  }
+
+  .order-summary th {
+    background-color: #e6fffa;
+  }
+
+  .total {
+    margin-top: 15px;
+    font-size: 1.2em;
+  }
+
+  .details {
+    margin-top: 30px;
+    line-height: 1.6em;
+  }
+
+  .buttons {
+    margin-top: 30px;
+  }
+
+  .btn {
+    margin: 0 10px 0 0;
+    padding: 10px 20px;
+    border: none;
+    text-decoration: none;
+    color: white;
+    background-color: #2f855a;
+    border-radius: 5px;
+    transition: background-color 0.2s ease;
+  }
+
+  .btn-secondary {
+    background-color: #4a5568;
+  }
+
+  .btn:hover {
+    background-color: #276749;
+  }
+
+  .btn-secondary:hover {
+    background-color: #2d3748;
+  }
+</style>
+{% endblock %}

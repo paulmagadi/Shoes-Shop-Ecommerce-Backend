@@ -16,8 +16,7 @@
             <input type="radio" name="shipping_address" value="{{ address.id }}"
               {% if address.id == selected_address.id %}checked{% endif %}>
             {{ address.full_name }}, {{ address.address }}, {{ address.city }} - {{ address.country }}
-          </label>
-          <br>
+          </label><br>
           <a href="{% url 'edit_shipping_address' address.id %}?next={% url 'checkout' %}">Edit</a> |
           <a href="{% url 'delete_shipping_address' address.id %}?next={% url 'checkout' %}">Delete</a>
         </div>
@@ -32,9 +31,10 @@
     <!-- 💳 Payment Method -->
     <h3>Payment Method</h3>
     <label><input type="radio" name="payment_method" value="mpesa" checked> MPesa</label><br>
-    <label><input type="radio" name="payment_method" value="paypal"> PayPal (coming soon)</label><br>
+    <label><input type="radio" name="payment_method" value="paypal"> PayPal</label><br>
     <label><input type="radio" name="payment_method" value="cod"> Cash on Delivery</label><br>
 
+    <!-- 📱 MPesa phone input -->
     <div id="mpesa-section" style="margin-top: 10px;">
       <label>Phone Number (MPesa):</label><br>
       <input type="text" name="phone" id="phone" placeholder="e.g. 254712345678">
@@ -76,6 +76,7 @@
   </form>
 </div>
 
+<!-- ✅ Styles -->
 <style>
   .container {
     max-width: 900px;
@@ -101,6 +102,7 @@
   }
 </style>
 
+<!-- 🧠 Payment Logic -->
 <script>
 let pollInterval = null;
 let countdownInterval = null;
@@ -115,9 +117,7 @@ function startPolling(transactionId) {
   countdownInterval = setInterval(() => {
     timeLeft--;
     countdownEl.textContent = `⏳ Time remaining: ${timeLeft}s`;
-    if (timeLeft <= 0) {
-      clearInterval(countdownInterval);
-    }
+    if (timeLeft <= 0) clearInterval(countdownInterval);
   }, 1000);
 
   pollInterval = setInterval(() => {
@@ -130,7 +130,6 @@ function startPolling(transactionId) {
           clearInterval(pollInterval);
           clearInterval(countdownInterval);
           statusEl.textContent = "✅ Payment received. Finalizing order...";
-
           fetch(`/mpesa/complete/${transactionId}/`)
             .then(res => res.json())
             .then(data => {
@@ -164,9 +163,7 @@ function showRetryButton() {
   btn.addEventListener("click", () => location.reload());
   document.getElementById("payment-status").after(btn);
 }
-</script>
 
-<script>
 document.getElementById('checkout-form').addEventListener('submit', function (e) {
   e.preventDefault();
 
@@ -214,25 +211,32 @@ document.getElementById('checkout-form').addEventListener('submit', function (e)
     const form = document.createElement("form");
     form.method = "POST";
     form.action = "{% url 'cod_checkout' %}";
-
     form.innerHTML = `
       <input type="hidden" name="csrfmiddlewaretoken" value="${csrf}">
       <input type="hidden" name="shipping_address" value="${shipping.value}">
     `;
-
     document.body.appendChild(form);
     form.submit();
-  } else {
-    alert("🚧 PayPal is not yet available.");
+
+  } else if (method === 'paypal') {
+    const form = document.createElement("form");
+    form.method = "POST";
+    form.action = "{% url 'create_paypal_order' %}";
+    form.innerHTML = `
+      <input type="hidden" name="csrfmiddlewaretoken" value="${csrf}">
+      <input type="hidden" name="shipping_address" value="${shipping.value}">
+    `;
+    document.body.appendChild(form);
+    form.submit();
   }
 });
 
-// Toggle phone input
-  document.querySelectorAll('input[name="payment_method"]').forEach(radio => {
-    radio.addEventListener('change', () => {
-      document.getElementById('mpesa-section').style.display =
-        radio.value === 'mpesa' ? 'block' : 'none';
-    });
+// Toggle MPesa phone field
+document.querySelectorAll('input[name="payment_method"]').forEach(radio => {
+  radio.addEventListener('change', () => {
+    document.getElementById('mpesa-section').style.display =
+      radio.value === 'mpesa' ? 'block' : 'none';
   });
+});
 </script>
 {% endblock %}

@@ -100,8 +100,13 @@ def complete_mpesa_order(request, transaction_id):
     txn.order = order
     txn.save()
     cart.items.all().delete()
+    
+    
+    # ✉️ Send confirmation email
+    send_order_confirmation_email(order)
 
     return JsonResponse({'redirect_url': reverse('order_confirmation', args=[order.id])})
+
 
 
 # 📥 Handle MPesa STK Push Callback
@@ -145,3 +150,60 @@ def mpesa_thank_you(request):
 def order_confirmation_view(request, order_id):
     order = get_object_or_404(Order, id=order_id, user=request.user)
     return render(request, "order/confirmation.html", {"order": order})
+
+
+# utils/email.py or directly in views.py for now
+from django.core.mail import send_mail
+from django.conf import settings
+
+def send_order_confirmation_email(order):
+    subject = f"Order #{order.id} Confirmation"
+    message = (
+        f"Hi {order.user.first_name},\n\n"
+        f"Your order #{order.id} has been received and is being processed.\n"
+        f"Total Amount: KES {order.total_price}\n"
+        f"Shipping to: {order.shipping_address.full_name}, {order.shipping_address.city}\n\n"
+        "We'll notify you when it's shipped.\n\nThank you for shopping with us!"
+    )
+    recipient = order.user.email
+    send_mail(subject, message, settings.DEFAULT_FROM_EMAIL, [recipient])
+
+
+
+# utils/email.py
+# from django.core.mail import EmailMultiAlternatives
+# from django.template.loader import render_to_string
+# from django.conf import settings
+
+# def send_order_confirmation_email(order):
+#     subject = f"✅ Order #{order.id} Confirmation - {settings.SITE_NAME}"
+#     from_email = settings.DEFAULT_FROM_EMAIL
+#     to_email = [order.user.email]
+
+#     context = {
+#         "order": order,
+#         "user": order.user,
+#         "items": order.items.all(),
+#         "shipping": order.shipping_address,
+#     }
+
+#     # Render both plain and HTML versions
+#     text_body = render_to_string("emails/order_confirmation.txt", context)
+#     html_body = render_to_string("emails/order_confirmation.html", context)
+
+#     email = EmailMultiAlternatives(subject, text_body, from_email, to_email)
+#     email.attach_alternative(html_body, "text/html")
+#     email.send()
+
+
+# import africastalking
+
+# def send_sms_confirmation(phone, order):
+#     africastalking.initialize(username="your_username", api_key="your_api_key")
+#     sms = africastalking.SMS
+#     message = f"Hi {order.user.first_name}, your order #{order.id} for KES {order.total_price} is confirmed. Thanks!"
+#     sms.send(message, [phone])
+
+
+
+#     send_sms_confirmation(txn.phone_number, order)

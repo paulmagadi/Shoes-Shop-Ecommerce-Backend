@@ -1,0 +1,8 @@
+{% extends "main/base.html" %}
+{% block content %}
+  <div class="container">
+    <h2>Payment Cancelled</h2>
+    <p>You have cancelled the payment process. No charges have been made.</p>
+    <a href="{% url 'checkout' %}" class="btn btn-warning">Back to Checkout</a>
+  </div>
+{% endblock %}
