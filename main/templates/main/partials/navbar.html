@@ -4,17 +4,18 @@
     <div class="header">
         <div class="logo">
             <a href="{% url 'home' %}"><img src="{% static 'images/brand/logo2.svg' %}" alt="" width="70px"
-                    title="KickStar"> Home</a>
+                    title="KickStar"></a>
         </div>
 
         <div class="search-bar">
 
-            <form action="" method="get">
-                <input type="search" placeholder="Search Products, Categories, Brands, ..." name="query" required>
+            <form action="{% url 'product_search' %}" method="get">
+                <input type="search" placeholder="Search Products, Categories, Brands, ..." name="q" value="{{ request.GET.q }}" required>
                 <i class="ri-search-line"></i>
                 <input type="submit" value="Search">
             </form>
         </div>
+
 
         <div class="navigation">
             <div class="help">
@@ -25,16 +26,12 @@
             {% if user.is_authenticated %}
             <div class="account">
                 <div class="account-initials">
-                    <a href="">{{ user.first_name|first|upper }}{{ user.last_name|first|upper }}</a>
+                    <a href="{% url 'account' %}">{{ user.first_name|first|upper }}{{ user.last_name|first|upper }}</a>
                 </div>
                 <div class="account-dropdown">
-                    <p class="login"><a href="{% url 'account' %}">Account</a></p>
+                    <p class="login"><a href="{% url 'account' %}">Profile</a></p>
                     <hr>
-
-                    <form action="{% url 'logout' %}" method="post">
-                        {% csrf_token %}
-                        <button type="submit">Logout</button>
-                    </form>
+                    <p class="login"><a href="{% url 'logout' %}">Logout</a></p>
                 </div>
             </div>
             {% else %}
@@ -49,28 +46,18 @@
 
 
             <div class="cart">
-                <a href="{% url 'cart_detail' %}" id="cart-icon">
-                    🛒 <span id="cart-count">{{ cart|length }}</span>
+                <a href="{% url 'cart_detail' %}">
+                    <i class="ri-shopping-cart-line" title="Cart"></i>
+                    <span id="cart-count" class="cart-count">{{ cart|length }}</span>
                 </a>
             </div>
-
         </div>
     </div>
 
 </header>
-
+<div class="header-after"></div>
 
 <div class="header-after"></div>
 
+<script src="{% static 'js/navbar.js' %}"></script>
 
-<style>
-    .header {
-        display: flex;
-        justify-content: space-between;
-    }
-
-    .navigation {
-        display: flex;
-        justify-content: space-between;
-    }
-</style>

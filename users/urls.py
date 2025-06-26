@@ -1,12 +1,13 @@
 from django.urls import path
 from . import views
+from . import register_views
 
 
 urlpatterns = [
     # User registration flow
-    path('register/', views.register_user, name='register'),
-    path('activate/<uidb64>/<token>/', views.activate_user, name='activate'),
-    path('resend-activation/', views.resend_activation_user, name='resend_activation'),
+    path('register/', register_views.register_user, name='register'),
+    path('activate/<uidb64>/<token>/', register_views.activate_user, name='activate'),
+    path('resend-activation/', register_views.resend_activation_user, name='resend_activation'),
     
     # User login and logout
     path('login/', views.login_user, name='login'),
@@ -43,6 +44,8 @@ urlpatterns += [
     ), name='password_change_done'),
 ]
 
+
+# User account flow
 from .views import dashboard_view, update_profile_view
 
 urlpatterns += [

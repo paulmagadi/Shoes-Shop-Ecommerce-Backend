@@ -1,16 +1,12 @@
 {% extends "main/base.html" %}
-{% load static %}
-
-{% block title %}
-Shoe Shop Ecommerce
-{% endblock %}
-
 {% block content %}
-{% include 'main/partials/banner.html' %}
 
-<h2>Latest Products</h2>
+
+{% if results %}
 <div class="product-grid">
-  {% for product in products %}
+  
+  <h2>Search results for "{{ query }}"</h2>
+  {% for product in results %}
   {% with featured=product.featured_color %}
   <div class="product-card">
     <a href="{% url 'product_detail' product.slug %}">
@@ -37,6 +33,10 @@ Shoe Shop Ecommerce
   {% endwith %}
   {% endfor %}
 </div>
+
+  {% else %}
+    <p>No products matched your search.</p>
+  {% endif %}
 <script>
   function swapImage(container) {
     const img = container.querySelector('.product-img');
@@ -64,14 +64,4 @@ Shoe Shop Ecommerce
     if (img) img.src = img.dataset.default;
   }
 </script>
-
-
-
-
-<style>
-  .product-img {
-    transition: all 0.3s ease-in-out;
-    object-fit: cover;
-  }
-</style>
 {% endblock %}
