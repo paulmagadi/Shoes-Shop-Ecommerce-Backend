@@ -44,7 +44,19 @@ from django.shortcuts import render, redirect
 from django.contrib import messages
 from django.contrib.auth import login, authenticate, logout
 
+from django.utils.http import url_has_allowed_host_and_scheme
+
+
 def login_user(request):
+    # Next URL validation
+    next_url = request.GET.get('next') or request.POST.get('next', '/')  
+    if not url_has_allowed_host_and_scheme(next_url, allowed_hosts={request.get_host()}):
+        next_url = '/' 
+    
+    # Redirect if already authenticated
+    if request.user.is_authenticated:
+        return redirect(next_url)
+    
     form = AuthenticationForm(request, data=request.POST or None)
     email_entered = ""
 
@@ -64,10 +76,10 @@ def login_user(request):
                     })
                 login(request, user)
                 messages.success(request, f"Welcome back, {user.first_name}!")
-                return redirect('home')  # adjust as needed
+                return redirect(next_url)  
             else:
                 messages.error(request, "Invalid credentials.")
-    return render(request, 'users/login_user.html', {'form': form})
+    return render(request, 'users/login_user.html', {'form': form, 'next': next_url,})
 
  
 

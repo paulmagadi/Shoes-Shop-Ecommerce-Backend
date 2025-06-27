@@ -1,0 +1,201 @@
+{% with featured=product.featured_color %}
+
+<a href="{% url 'product_detail' product.slug %}">
+    <div class="product-card">
+        <div class="product-image-wrapper">
+            <div class="product-image">
+            <img src="{{ featured.images.first.imageURL }}" class="product-img"
+                data-default="{{ featured.images.first.imageURL }}" alt="{{ product.name }}" />
+                </div>
+        </div>
+</a>
+
+<div class="product-info">
+    <div class="product-title">{{ product.name }}</div>
+    <div class="product-price">KES {{ featured.variants.first.price }}</div>
+
+    <div class="swatch-wrapper">
+        <div class="scroll-btn scroll-left hidden">&#10094;</div>
+        <div class="swatches">
+            {% for color in product.colors.all %}
+            <img src="{{ color.images.first.imageURL }}" alt="{{ color.color.name }}" title="{{ color.color.name }}"
+                class="swatch{% if color.id == featured.id %} active{% endif %}" />
+            {% endfor %}
+        </div>
+        <div class="scroll-btn scroll-right">&#10095;</div>
+    </div>
+</div>
+
+</div>
+{% endwith %}
+
+
+<script>
+    document.addEventListener("DOMContentLoaded", () => {
+        document.querySelectorAll(".product-card").forEach((card) => {
+            const mainImage = card.querySelector(".product-img");
+            const swatches = card.querySelectorAll(".swatch");
+            const container = card.querySelector(".swatches");
+            const leftBtn = card.querySelector(".scroll-left");
+            const rightBtn = card.querySelector(".scroll-right");
+
+            const getScrollAmount = () => swatches[0]?.offsetWidth + 10;
+
+            function updateScrollButtons() {
+                if (!container) return;
+                const { scrollLeft, scrollWidth, clientWidth } = container;
+                leftBtn?.classList.toggle("hidden", scrollLeft <= 0);
+                rightBtn?.classList.toggle("hidden", scrollLeft >= scrollWidth - clientWidth - 1);
+            }
+
+            swatches.forEach((swatch) => {
+                swatch.addEventListener("click", () => {
+                    mainImage.style.opacity = 0;
+                    setTimeout(() => {
+                        mainImage.src = swatch.src;
+                        mainImage.dataset.default = swatch.src;
+                        mainImage.style.opacity = 1;
+                    }, 150);
+
+                    swatches.forEach(s => s.classList.remove("active"));
+                    swatch.classList.add("active");
+                });
+            });
+
+            leftBtn?.addEventListener("click", () => {
+                container.scrollBy({ left: -getScrollAmount(), behavior: "smooth" });
+            });
+
+            rightBtn?.addEventListener("click", () => {
+                container.scrollBy({ left: getScrollAmount(), behavior: "smooth" });
+            });
+
+            container?.addEventListener("scroll", () => {
+                clearTimeout(container._scrollTimeout);
+                container._scrollTimeout = setTimeout(updateScrollButtons, 100);
+            });
+
+            window.addEventListener("resize", updateScrollButtons);
+            updateScrollButtons();
+        });
+    });
+</script>
+
+
+<style>
+    .product-card {
+        width: 100%;
+        max-width: 300px;
+        background: #fff;
+        overflow: hidden;
+        border-radius: 8px;
+        box-shadow: 0 2px 6px rgba(0, 0, 0, 0.05);
+        margin-bottom: 2rem;
+    }
+
+    .product-image {
+        width: 100%;
+        border-bottom: 1px solid #eee;
+    }
+
+    .product-image img {
+        width: 100%;
+        aspect-ratio: 1;
+        object-fit: cover;
+        transition: opacity 0.3s ease;
+    }
+
+    .product-info {
+        padding: 1em .8em;
+    }
+
+    .product-title {
+        font-size: 1.1rem;
+        font-weight: 600;
+        margin-bottom: 0.5em;
+    }
+
+    .product-price {
+        color: #d32f2f;
+        font-weight: 700;
+        font-size: 1.1rem;
+        margin-bottom: 1rem;
+    }
+
+    .swatch-wrapper {
+        position: relative;
+        padding: 0 30px;
+        margin-bottom: 1rem;
+    }
+
+    .swatches {
+        display: flex;
+        gap: 10px;
+        overflow-x: auto;
+        scroll-snap-type: x mandatory;
+        scrollbar-width: none;
+    }
+
+    .swatches::-webkit-scrollbar {
+        display: none;
+    }
+
+    .swatch {
+        width: 42px;
+        height: 42px;
+        border-radius: 6px;
+        border: 2px solid transparent;
+        scroll-snap-align: center;
+        flex-shrink: 0;
+        cursor: pointer;
+        object-fit: cover;
+        transition: all 0.2s ease;
+    }
+
+    .swatch.active {
+        border: 1px solid #333;
+    }
+
+    .swatch:hover {
+        border-color: #aaa;
+    }
+
+    .scroll-btn {
+        position: absolute;
+        top: 50%;
+        transform: translateY(-50%);
+        background: rgba(0, 0, 0, 0.05);
+        width: 24px;
+        height: 42px;
+        border-radius: 4px;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        font-size: 1.2rem;
+        cursor: pointer;
+        transition: background 0.2s ease;
+    }
+
+    .scroll-btn:hover {
+        background: rgba(0, 0, 0, 0.1);
+    }
+
+    .scroll-left {
+        left: 0;
+    }
+
+    .scroll-right {
+        right: 0;
+    }
+
+    .scroll-btn.hidden {
+        opacity: 0;
+        pointer-events: none;
+    }
+
+    @media (max-width: 600px) {
+        .scroll-btn {
+            display: none !important;
+        }
+    }
+</style>

@@ -2,9 +2,13 @@
 <form method="post">
   {% csrf_token %}
   {{ form.as_p }}
+  <input type="hidden" name="next" value="{{ request.GET.next|default:'/' }}">
   <button type="submit">Log In</button>
   
-  <a href="{% url 'password_reset' %}">Forgot password</a>
+   <div class="links">
+        <span>Don't have an account? <a href="{% url 'register' %}?next={{ request.GET.next }}">Register</a></span>
+        <span><a href="{% url 'password_reset' %}">Forgot password?</a></span>
+    </div>
 </form>
 
 {% if show_resend_button %}

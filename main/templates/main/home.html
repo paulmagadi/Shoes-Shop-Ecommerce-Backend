@@ -7,71 +7,21 @@ Shoe Shop Ecommerce
 
 {% block content %}
 {% include 'main/partials/banner.html' %}
-
 <h2>Latest Products</h2>
-<div class="product-grid">
+<div class="product-list">
   {% for product in products %}
-  {% with featured=product.featured_color %}
-  <div class="product-card">
-    <a href="{% url 'product_detail' product.slug %}">
-      <div class="product-image-wrapper" onmouseover="swapImage(this)" onmouseout="resetImage(this)">
-        <img src="{{ featured.images.first.imageURL }}" data-default="{{ featured.images.first.imageURL }}"
-          data-hover="{% if featured.images.all|length > 1 %}{{ featured.images.all.1.imageURL }}{% else %}{{ featured.images.first.imageURL }}{% endif %}"
-          class="product-img product-img-{{ product.id }}" width="200" height="200">
-      </div>
-      <h3>{{ product.name }}</h3>
-      <p>{{ product.brand.name }}</p>
-      <p>KES {{ featured.variants.first.price }}</p>
-    </a>
+  {% include 'main/partials/product-card.html' %}
 
-    <!-- 🔁 Color Hover Thumbnails -->
-    <div class="color-swatches">
-      {% for color in product.colors.all %}
-      <img src="{{ color.images.first.imageURL }}" alt="{{ color.color.name }}" title="{{ color.color.name }}"
-        class="color-thumb" width="35" height="35" style="border-radius: 50%; cursor: pointer; object-fit: cover;"
-        onmouseover="previewColor('{{ product.id }}', '{{ color.images.first.imageURL }}')"
-        onmouseout="resetColor('{{ product.id }}')">
-      {% endfor %}
-    </div>
-  </div>
-  {% endwith %}
   {% endfor %}
 </div>
-<script>
-  function swapImage(container) {
-    const img = container.querySelector('.product-img');
-    const hoverSrc = img.getAttribute('data-hover');
-    if (hoverSrc) {
-      img.src = hoverSrc;
-    }
-  }
-
-  function resetImage(container) {
-    const img = container.querySelector('.product-img');
-    const defaultSrc = img.getAttribute('data-default');
-    if (defaultSrc) {
-      img.src = defaultSrc;
-    }
-  }
-
-  function previewColor(productId, imageUrl) {
-    const img = document.querySelector(`.product-img-${productId}`);
-    if (img) img.src = imageUrl;
-  }
-
-  function resetColor(productId) {
-    const img = document.querySelector(`.product-img-${productId}`);
-    if (img) img.src = img.dataset.default;
-  }
-</script>
-
-
 
 
 <style>
-  .product-img {
-    transition: all 0.3s ease-in-out;
-    object-fit: cover;
+  .product-list {
+    display: grid;
+    gap: 1.5rem;
+    grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
   }
 </style>
+
 {% endblock %}

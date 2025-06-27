@@ -9,13 +9,13 @@
       <div class="product-image-section">
         <div class="product-image-preview">
           <img id="main-product-img" src="{{ selected_color.images.first.imageURL }}"
-            data-default="{{ selected_color.images.first.imageURL }}" width="400" height="400">
+            data-default="{{ selected_color.images.first.imageURL }}" width="400" style="aspect-ratio: 1; object-fit: cover;">
         </div>
 
         <div class="product-thumbnails">
           {% for image in selected_color.images.all %}
           <img src="{{ image.imageURL }}" alt="" width="40" height="40"
-            onmouseover="swapMainImage('{{ image.imageURL }}')" onmouseout="resetMainImage()">
+            onmouseover="swapMainImage('{{ image.imageURL }}')" onmouseout="resetMainImage()" style="aspect-ratio: 1; object-fit: cover;">
           {% endfor %}
         </div>
       </div>

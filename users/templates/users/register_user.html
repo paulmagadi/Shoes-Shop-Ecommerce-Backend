@@ -12,6 +12,11 @@
             <button type="submit">Register</button>
         </div>
             
+        <div class="login-container">
+            <button type="button" class="cancelbtn" id="cancel-signup-button">
+                <a href="{% if request.GET.next %}{{ request.GET.next }}{% else %}{% url 'home' %}{% endif %}">Cancel</a>
+            <span class="password">Already have accout? <a href="{% url 'login' %}?next={{ request.GET.next }}">Login.</a></span>
+        </div>
     </form>
 
 </div>

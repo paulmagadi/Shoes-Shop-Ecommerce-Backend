@@ -17,7 +17,15 @@ from django.contrib.auth import get_backends
 from .forms import ResendActivationEmailForm
 
 
+from django.utils.http import url_has_allowed_host_and_scheme
+
+
 def register_user(request):
+    
+    next_url = request.GET.get('next') or request.POST.get('next', '/') 
+    if not url_has_allowed_host_and_scheme(next_url, allowed_hosts={request.get_host()}):
+        next_url = '/' 
+        
     if request.method == 'POST':
         form = CustomUserRegistrationForm(request.POST)
         if form.is_valid():
@@ -42,7 +50,7 @@ def register_user(request):
             return redirect('login') 
     else:
         form = CustomUserRegistrationForm()
-    return render(request, 'users/register_user.html', {'form': form})
+    return render(request, 'users/register_user.html', {'form': form, 'next': next_url})
 
 
 
@@ -61,9 +69,9 @@ def activate_user(request, uidb64, token):
         backend = get_backends()[0]
         user.backend = f"{backend.__module__}.{backend.__class__.__name__}"
 
-        login(request, user)
+        # login(request, user)
         messages.success(request, 'Email verified successfully. You are now logged in.')
-        return redirect('home')  
+        return redirect('login')  
     else:
         messages.error(request, 'Invalid or expired activation link.')
         return redirect('login')
