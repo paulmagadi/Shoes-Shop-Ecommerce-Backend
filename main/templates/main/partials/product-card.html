@@ -1,30 +1,43 @@
 {% with featured=product.featured_color %}
 
-<a href="{% url 'product_detail' product.slug %}">
-    <div class="product-card">
-        <div class="product-image-wrapper">
-            <div class="product-image">
+
+<div class="product-card">
+    <a href="{% url 'product_detail' product.slug %}">
+    <div class="product-image-wrapper">
+        <div class="product-image">
             <img src="{{ featured.images.first.imageURL }}" class="product-img"
                 data-default="{{ featured.images.first.imageURL }}" alt="{{ product.name }}" />
-                </div>
         </div>
-</a>
-
-<div class="product-info">
-    <div class="product-title">{{ product.name }}</div>
-    <div class="product-price">KES {{ featured.variants.first.price }}</div>
-
-    <div class="swatch-wrapper">
-        <div class="scroll-btn scroll-left hidden">&#10094;</div>
-        <div class="swatches">
-            {% for color in product.colors.all %}
-            <img src="{{ color.images.first.imageURL }}" alt="{{ color.color.name }}" title="{{ color.color.name }}"
-                class="swatch{% if color.id == featured.id %} active{% endif %}" />
-            {% endfor %}
-        </div>
-        <div class="scroll-btn scroll-right">&#10095;</div>
     </div>
-</div>
+    </a>
+
+    <div class="product-info">
+        <a href="{% url 'product_detail' product.slug %}">
+            <div class="product-title">{{ product.name }}</div>
+        </a>
+        <div class="product-price">KES {{ featured.variants.first.price }}</div>
+
+
+        <div class="swatch-wrapper">
+            <div class="scroll-btn scroll-left hidden">&#10094;</div>
+            <div class="swatches">
+
+                {% for color in product.colors.all %}
+                {% if color.images.count == 0 %}
+                <span class="swatch no-image" title="{{ color.color.name }}">{{ color.color.name }}</span>
+                {% elif color.images.count == 1 %}
+                <img src="" alt="pass">
+                {% elif color.images.count > 1 %}
+
+                <img src="{{ color.images.first.imageURL }}" alt="{{ color.color.name }}" title="{{ color.color.name }}"
+                    class="swatch{% if color.id == featured.id %} active{% endif %}" />
+
+                {% endif %}
+                {% endfor %}
+            </div>
+            <div class="scroll-btn scroll-right">&#10095;</div>
+        </div>
+    </div>
 
 </div>
 {% endwith %}

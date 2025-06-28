@@ -6,13 +6,11 @@ Shoe Shop Ecommerce
 {% endblock %}
 
 {% block content %}
-{% include 'main/partials/banner.html' %}
 <div class="product-list">
   {% for product in products %}
   {% include 'main/partials/product-card.html' %}
   {% endfor %}
 </div>
-
 
 
 {% endblock %}

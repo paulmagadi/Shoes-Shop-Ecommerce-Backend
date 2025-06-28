@@ -65,3 +65,10 @@ def get_product_color_details(request, color_id):
         return JsonResponse({'error': 'Color not found'}, status=404)
 
 
+def product_list_view(request):  
+    products = Product.objects.filter(is_active=True, is_archived=False)\
+        .prefetch_related('colors__color', 'colors__images', 'colors__variants__size')\
+        .select_related('brand')
+    return render(request, 'store/product_list.html', {
+        'products': products,
+    })

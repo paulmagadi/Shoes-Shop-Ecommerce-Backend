@@ -8,7 +8,7 @@
 
     <title>{% block title %}{% endblock %}</title>
 
-    
+
     <link rel="shortcut icon" href="logo2.svg" type="image/x-icon">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/remixicon/4.6.0/remixicon.min.css">
 
@@ -18,11 +18,12 @@
 </head>
 
 <body>
-    {% include 'main/partials/navbar.html' %}
+    <div class="container">
+        {% include 'main/partials/navbar.html' %}
 
-    {% block content %}
-    {% endblock %}
-
+        {% block content %}
+        {% endblock %}
+    </div>
     <script>
         function updateCartIcon() {
             fetch('/cart/ajax/cart-count/')
