@@ -1,0 +1,187 @@
+<div class="scroll-container">
+    <div class="scroll-btn scroll-left hidden" id="scrollLeft">&#10094;</div>
+    <div class="scroll-btn scroll-right" id="scrollRight">&#10095;</div>
+
+    <div class="product-list" id="productList">
+        {% for product in products %}
+        {% include 'main/partials/product-card.html' %}
+        {% endfor %}
+    </div>
+</div>
+
+<script>
+    const productList = document.getElementById("productList");
+    const leftBtn = document.getElementById("scrollLeft");
+    const rightBtn = document.getElementById("scrollRight");
+
+    const updateScrollButtons = () => {
+        leftBtn.classList.toggle("hidden", productList.scrollLeft <= 0);
+        rightBtn.classList.toggle(
+            "hidden",
+            productList.scrollLeft >= productList.scrollWidth - productList.clientWidth - 1
+        );
+    };
+
+    const scrollAmount = () => {
+        const firstCard = productList.querySelector(".product-card");
+        return firstCard ? firstCard.offsetWidth + 24 : 300;
+    };
+
+    leftBtn.addEventListener("click", () => {
+        productList.scrollBy({ left: -scrollAmount(), behavior: "smooth" });
+    });
+
+    rightBtn.addEventListener("click", () => {
+        productList.scrollBy({ left: scrollAmount(), behavior: "smooth" });
+    });
+
+    productList.addEventListener("scroll", () => {
+        updateScrollButtons();
+    });
+
+    window.addEventListener("load", updateScrollButtons);
+    window.addEventListener("resize", updateScrollButtons);
+</script>
+
+
+<style>
+    .scroll-container {
+        position: relative;
+        overflow: hidden;
+    }
+
+    .product-list {
+        display: flex;
+        flex-wrap: nowrap;
+        gap: 1.5rem;
+        overflow-x: auto;
+        scroll-snap-type: x mandatory;
+        padding-bottom: 1rem;
+        scrollbar-width: none;
+        -ms-overflow-style: none;
+    }
+
+    .product-list::-webkit-scrollbar {
+        display: none;
+    }
+
+    .product-card {
+        flex: 0 0 auto;
+        min-width: 260px;
+        max-width: 300px;
+        background: #fff;
+        border-radius: 10px;
+        overflow: hidden;
+        box-shadow: 0 2px 6px rgba(0, 0, 0, 0.06);
+        scroll-snap-align: start;
+        transition: transform 0.2s ease;
+    }
+
+    /* .product-card:hover {
+        transform: translateY(-4px);
+    } */
+
+    .product-image img {
+        width: 100%;
+        aspect-ratio: 1;
+        object-fit: cover;
+        transition: opacity 0.3s ease;
+    }
+
+    .product-info {
+        padding: 1.2em;
+    }
+
+    .product-title {
+        font-size: 1.25rem;
+        margin-bottom: 0.5em;
+        font-weight: 600;
+    }
+
+    .product-price {
+        color: #d32f2f;
+        font-weight: 700;
+        font-size: 1.1rem;
+        margin-bottom: 1rem;
+    }
+
+    /* .swatch-wrapper {
+        padding: 0 20px;
+        margin-bottom: 1rem;
+    }
+
+    .swatches {
+        display: flex;
+        gap: 10px;
+        overflow-x: auto;
+        scroll-snap-type: x mandatory;
+        scrollbar-width: none;
+    }
+
+    .swatches::-webkit-scrollbar {
+        display: none;
+    }
+
+    .swatch {
+        width: 42px;
+        height: 42px;
+        border-radius: 6px;
+        border: 2px solid transparent;
+        scroll-snap-align: center;
+        flex-shrink: 0;
+        cursor: pointer;
+        object-fit: cover;
+        transition: all 0.2s ease;
+    }
+
+    .swatch:hover {
+        border-color: #aaa;
+    }
+
+    .swatch.active {
+        border-color: #333;
+        box-shadow: 0 0 0 3px rgba(0, 0, 0, 0.15);
+    } */
+
+    .scroll-btn {
+        position: absolute;
+        top: 50%;
+        transform: translateY(-50%);
+        background: rgba(0, 0, 0, 0.1);
+        color: #333;
+        width: 36px;
+        height: 60px;
+        border-radius: 6px;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        font-size: 1.5rem;
+        cursor: pointer;
+        z-index: 10;
+        -webkit-user-select: none;
+        user-select: none;
+        transition: background 0.3s ease;
+    }
+
+    .scroll-btn:hover {
+        background: rgba(0, 0, 0, 0.2);
+    }
+
+    .scroll-left {
+        left: 0;
+    }
+
+    .scroll-right {
+        right: 0;
+    }
+
+    .scroll-btn.hidden {
+        display: none;
+    }
+
+    @media (max-width: 600px) {
+        .scroll-btn {
+            display: none !important;
+        }
+    }
+</style>

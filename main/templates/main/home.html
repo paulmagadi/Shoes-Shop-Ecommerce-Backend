@@ -7,11 +7,14 @@ Shoe Shop Ecommerce
 
 {% block content %}
 {% include 'main/partials/banner.html' %}
-<div class="product-list">
-  {% for product in products %}
-  {% include 'main/partials/product-card.html' %}
-  {% endfor %}
-</div>
+
+<section>
+  <div class="section-heading">
+    <h2>Featured Products</h2>
+    <p>Explore our latest collection of shoes</p>
+  </div>
+  {% include 'main/partials/scroll-section.html' %}
+</section>
 
 
 

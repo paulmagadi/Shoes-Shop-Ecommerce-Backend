@@ -7,17 +7,18 @@
                     title="KickStar"></a>
         </div>
 
-        <div class="search-bar">
+        <div class="search-bar desktop">
 
             <form action="{% url 'product_search' %}" method="get">
-                <input type="search" placeholder="Search Products, Categories, Brands, ..." name="q" value="{{ request.GET.q }}" required>
+                <input type="search" placeholder="Search Products, Categories, Brands, ..." name="q"
+                    value="{{ request.GET.q }}" required>
                 <i class="ri-search-line"></i>
                 <input type="submit" value="Search">
             </form>
         </div>
 
 
-        <div class="navigation">
+        <div class="header-items">
             <div class="help">
                 <i class="ri-questionnaire-line"></i>
             </div>
@@ -54,10 +55,31 @@
         </div>
     </div>
 
+
+    <div class="search-bar mobile">
+        <form action="{% url 'product_search' %}" method="get">
+            <input type="search" placeholder="Search Products, Categories, Brands, ..." name="q"
+                value="{{ request.GET.q }}" required>
+            <!-- <span><i class="ri-search-line"></i></span> -->
+            <input type="submit" value="Search">
+        </form>
+    </div>
+    <nav>
+        <ul class="nav-links">
+            <li><a href="{% url 'products' %}">All</a></li>
+            <li><a href="{% url 'home' %}">Women</a></li>
+            <li><a href="{% url 'home' %}">Men</a></li>
+            <li><a href="{% url 'home' %}">Kids</a></li>
+            <li><a href="{% url 'home' %}">New</a></li>
+            <li><a href="{% url 'home' %}">Deals</a></li>
+            <li><a href="{% url 'home' %}">Brands</a></li>
+            <li><a href="{% url 'home' %}">Sale</a></li>
+            <li><a href="{% url 'home' %}">Contact</a></li>
+            <li><a href="{% url 'home' %}">About</a></li>
+        </ul>
+    </nav>
+
 </header>
 <div class="header-after"></div>
 
-<div class="header-after"></div>
-
-<script src="{% static 'js/navbar.js' %}"></script>
-
+<!-- <script src="{% static 'js/navbar.js' %}"></script> -->

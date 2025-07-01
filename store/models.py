@@ -99,10 +99,80 @@ class Product(models.Model):
     
     @property
     def featured_color(self):
-        return self.colors.filter(is_featured=True).first()
+        """Returns the featured color for the product, if available. Esle returns the first color."""
+        featured_color = self.colors.filter(is_featured=True).first()
+        return featured_color if featured_color else self.colors.first()
+    
+    def get_featured_image(self):
+        """Returns the featured image for the product's featured color."""
+        if self.featured_color:
+            return self.featured_color.images.filter(is_featured=True).first()
+        return None
+    
+    @property
+    def imageURL(self):
+        """Returns the URL of the featured image for the product."""
+        featured_image = self.get_featured_image()
+        if featured_image:
+            return featured_image.imageURL
+        return static('images/brand/product-placeholder.png')
+    
+    @property
+    def price(self):
+        """Returns the price of the first variant of the product's featured color."""
+        if self.featured_color and self.featured_color.variants.exists():
+            return self.featured_color.variants.first().price
+        return None
+    
+    @property
+    def sale_price(self):
+        """Returns the sale price of the first variant of the product's featured color."""
+        if self.featured_color and self.featured_color.variants.exists():
+            return self.featured_color.variants.first().sale_price
+        return None
+    
+    @property
+    def is_on_sale(self):
+        """Checks if the product is on sale based on the first variant of the featured color."""
+        if self.featured_color and self.featured_color.variants.exists():
+            return self.featured_color.variants.first().sale_price is not None
+        return False
+    
+    @property
+    def total_stock(self):
+        """Calculates the total stock for all variants of the product's featured color."""
+        if self.featured_color:
+            return sum(variant.stock for variant in self.featured_color.variants.all())
+        return 0
+    
+    @property
+    def created_by_username(self):
+        """Returns the username of the user who created the product."""
+        return self.created_by.username if self.created_by else 'System'
+    
+    @property
+    def updated_by_username(self):
+        """Returns the username of the user who last updated the product."""
+        return self.updated_by.username if self.updated_by else 'System'
+    
+    @property
+    def approved_by_username(self):
+        """Returns the username of the user who approved the product."""
+        return self.approved_by.username if self.approved_by else 'Not Approved'
+    
+    @property
+    def approved_at_formatted(self):
+        """Returns the formatted approval date and time."""
+        if self.approved_at:
+            return self.approved_at.strftime('%Y-%m-%d %H:%M:%S')
+        return 'Not Approved'
+
+    
+
 
 
     def save(self, *args, user=None, **kwargs):
+        """ Save method for Product model."""
         if not self.slug:
             self.slug = slugify(self.name)
         if user and not self.pk:
@@ -125,12 +195,18 @@ class ProductColor(models.Model):
     def __str__(self):
         return f"{self.product.name} - {self.color.name}"
     
+    
     def save(self, *args, **kwargs):
         if self.is_featured:
             ProductColor.objects.filter(product=self.product, is_featured=True).exclude(id=self.id).update(is_featured=False)
         super().save(*args, **kwargs)
 
-
+    @property
+    def imageURL(self):
+        try:
+            return self.images.filter(is_featured=True).first().image.url
+        except (AttributeError, IndexError):
+            return static('images/brand/product-placeholder.png')
 
 # -----------------------------
 # Variant = Color + Size + Stock
@@ -177,7 +253,27 @@ class ProductImage(models.Model):
 
     @property
     def imageURL(self):
-        try:
-            return self.image.url
-        except:
-            return ''
+        return self.image.url if self.image else static('images/brand/product-placeholder.png')
+    
+    
+    # def imageURL(self):
+    #     try:
+    #         return self.image.url
+    #     except:
+    #         return ''
+        
+# -----------------------------
+# Product Review    
+# -----------------------------
+# class ProductReview(models.Model):
+#     product = models.ForeignKey(Product, on_delete=models.CASCADE, related_name='reviews')
+#     user = models.ForeignKey(CustomUser, on_delete=models.CASCADE, related_name='product_reviews')
+#     rating = models.PositiveIntegerField(default=1)
+#     comment = models.TextField(blank=True)
+#     created_at = models.DateTimeField(auto_now_add=True)
+
+#     class Meta:
+#         unique_together = ('product', 'user')
+
+#     def __str__(self):
+#         return f"{self.user.username} - {self.product.name} ({self.rating})"

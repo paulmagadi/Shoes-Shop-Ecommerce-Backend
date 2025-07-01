@@ -81,8 +81,8 @@ function stopAutoPlay() {
  }
 
 // Pause slideshow on mouse over
-slideshow.addEventListener("mouseover", stopAutoPlay);
-slideshow.addEventListener("mouseout", startAutoPlay);
+// slideshow.addEventListener("mouseover", stopAutoPlay);
+// slideshow.addEventListener("mouseout", startAutoPlay);
 
 showSlides();
 startAutoPlay();

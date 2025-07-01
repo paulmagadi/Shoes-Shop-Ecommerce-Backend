@@ -1,6 +1,5 @@
 {% with featured=product.featured_color %}
 
-
 <div class="product-card">
     <a href="{% url 'product_detail' product.slug %}">
     <div class="product-image-wrapper">
@@ -19,7 +18,7 @@
 
 
         <div class="swatch-wrapper">
-            <div class="scroll-btn scroll-left hidden">&#10094;</div>
+            <div class="swatch-scroll-btn swatch-scroll-left hidden">&#10094;</div>
             <div class="swatches">
 
                 {% for color in product.colors.all %}
@@ -35,7 +34,7 @@
                 {% endif %}
                 {% endfor %}
             </div>
-            <div class="scroll-btn scroll-right">&#10095;</div>
+            <div class="swatch-scroll-btn swatch-scroll-right">&#10095;</div>
         </div>
     </div>
 
@@ -49,8 +48,8 @@
             const mainImage = card.querySelector(".product-img");
             const swatches = card.querySelectorAll(".swatch");
             const container = card.querySelector(".swatches");
-            const leftBtn = card.querySelector(".scroll-left");
-            const rightBtn = card.querySelector(".scroll-right");
+            const leftBtn = card.querySelector(".swatch-scroll-left");
+            const rightBtn = card.querySelector(".swatch-scroll-right");
 
             const getScrollAmount = () => swatches[0]?.offsetWidth + 10;
 
@@ -173,7 +172,7 @@
         border-color: #aaa;
     }
 
-    .scroll-btn {
+    .swatch-scroll-btn {
         position: absolute;
         top: 50%;
         transform: translateY(-50%);
@@ -189,25 +188,25 @@
         transition: background 0.2s ease;
     }
 
-    .scroll-btn:hover {
+    .swatch-scroll-btn:hover {
         background: rgba(0, 0, 0, 0.1);
     }
 
-    .scroll-left {
+    .swatch-scroll-left {
         left: 0;
     }
 
-    .scroll-right {
+    .swatch-scroll-right {
         right: 0;
     }
 
-    .scroll-btn.hidden {
+    .swatch-scroll-btn.hidden {
         opacity: 0;
         pointer-events: none;
     }
 
     @media (max-width: 600px) {
-        .scroll-btn {
+        .swatch-scroll-btn {
             display: none !important;
         }
     }
