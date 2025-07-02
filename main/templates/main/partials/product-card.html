@@ -1,7 +1,7 @@
 {% with featured=product.featured_color %}
 
 <div class="product-card">
-    <a href="{% url 'product_detail' product.slug %}">
+    <a href="{% url 'product_detail' product.slug %}" title="View {{ product.name }}">
     <div class="product-image-wrapper">
         <div class="product-image">
             <img src="{{ featured.images.first.imageURL }}" class="product-img"
@@ -11,11 +11,17 @@
     </a>
 
     <div class="product-info">
-        <a href="{% url 'product_detail' product.slug %}">
+        <a href="{% url 'product_detail' product.slug %}"  title="View {{ product.name }}">
             <div class="product-title">{{ product.name }}</div>
         </a>
-        <div class="product-price">KES {{ featured.variants.first.price }}</div>
-
+        <div class="product-price">
+            {% if featured.variants.first.sale_price %}
+            <span class="sale-price">KES {{ featured.variants.first.sale_price }}</span>
+            <span class="price original-price"><del>KES {{ featured.variants.first.price }}</del></span>
+            {% else %}
+            <span class="price">KES {{ featured.variants.first.price }}</span>
+            {% endif %}
+        </div>
 
         <div class="swatch-wrapper">
             <div class="swatch-scroll-btn swatch-scroll-left hidden">&#10094;</div>
@@ -125,19 +131,27 @@
         font-size: 1.1rem;
         font-weight: 600;
         margin-bottom: 0.5em;
+        color: #333;
     }
 
-    .product-price {
+    .sale-price {
         color: #d32f2f;
         font-weight: 700;
         font-size: 1.1rem;
         margin-bottom: 1rem;
     }
 
+    .original-price {
+        color: #999;
+        font-size: 0.9rem;
+        text-decoration: line-through;
+        margin-left: 0.5em;
+    }
+
     .swatch-wrapper {
         position: relative;
-        padding: 0 30px;
-        margin-bottom: 1rem;
+        /* padding: 0 30px; */
+        /* margin-bottom: 1rem; */
     }
 
     .swatches {

@@ -6,11 +6,61 @@ Shoe Shop Ecommerce
 {% endblock %}
 
 {% block content %}
-<div class="product-list">
-  {% for product in products %}
-  {% include 'main/partials/product-card.html' %}
-  {% endfor %}
+<div class="product-list-container">
+  <div class="product-list-header">
+    <h2>All Products</h2>
+    <p>Discover our products</p>
+  </div>
+  <div class="product-list">
+    {% for product in products %}
+    {% include 'main/partials/product-card.html' %}
+    {% endfor %}
+  </div>
+  <div class="pagination">
+    {% if products.has_previous %}
+    <a href="?page={{ products.previous_page_number }}">&laquo; Previous</a>
+    {% endif %}
+
+    <span>Page {{ products.number }} of {{ products.paginator.num_pages }}</span>
+
+    {% if products.has_next %}
+    <a href="?page={{ products.next_page_number }}">Next &raquo;</a>
+    {% endif %}
+  </div>
 </div>
 
 
-{% endblock %}
+<style>
+  .product-list-container {
+    padding: 2rem 0;
+    background-color: #f9f9f9;
+  }
+
+  .product-list-header {
+    text-align: center;
+    margin-bottom: 1.5rem;
+  }
+
+  .product-list {
+    display: grid;
+    gap: 1.5rem;
+    grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+  }
+
+  .pagination {
+    text-align: center;
+    margin-top: 1.5rem;
+  }
+
+  .pagination a {
+    margin: 0 0.5rem;
+    text-decoration: none;
+    color: #007bff;
+  }
+
+  .pagination span {
+    margin: 0 0.5rem;
+    color: #555;
+  }
+</style>
+{% endblock content %}

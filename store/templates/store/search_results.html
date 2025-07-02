@@ -1,67 +1,37 @@
 {% extends "main/base.html" %}
+{% load static %}
+
+{% block title %}
+Shoe Shop Ecommerce
+{% endblock %}
+
 {% block content %}
-
-
-{% if results %}
-<div class="product-grid">
-  
-  <h2>Search results for "{{ query }}"</h2>
-  {% for product in results %}
-  {% with featured=product.featured_color %}
-  <div class="product-card">
-    <a href="{% url 'product_detail' product.slug %}">
-      <div class="product-image-wrapper" onmouseover="swapImage(this)" onmouseout="resetImage(this)">
-        <img src="{{ featured.images.first.imageURL }}" data-default="{{ featured.images.first.imageURL }}"
-          data-hover="{% if featured.images.all|length > 1 %}{{ featured.images.all.1.imageURL }}{% else %}{{ featured.images.first.imageURL }}{% endif %}"
-          class="product-img product-img-{{ product.id }}" width="200" height="200">
-      </div>
-      <h3>{{ product.name }}</h3>
-      <p>{{ product.brand.name }}</p>
-      <p>KES {{ featured.variants.first.price }}</p>
-    </a>
-
-    <!-- 🔁 Color Hover Thumbnails -->
-    <div class="color-swatches">
-      {% for color in product.colors.all %}
-      <img src="{{ color.images.first.imageURL }}" alt="{{ color.color.name }}" title="{{ color.color.name }}"
-        class="color-thumb" width="35" height="35" style="border-radius: 50%; cursor: pointer; object-fit: cover;"
-        onmouseover="previewColor('{{ product.id }}', '{{ color.images.first.imageURL }}')"
-        onmouseout="resetColor('{{ product.id }}')">
-      {% endfor %}
-    </div>
+<div class="product-list-container">
+  <div class="product-list-header">
+    <h1>Products</h1>
+    {% if query %}
+    <p>Search results for "{{ query }}"</p>
+    {% else %}
+    <p>All Products</p>
+    {% endif %}
   </div>
-  {% endwith %}
-  {% endfor %}
+  <div class="product-list">
+  {% for product in results %}
+    {% include 'main/partials/product-card.html' %}
+    {% endfor %}
+  </div>
+  <div class="pagination">
+    {% if products.has_previous %}
+    <a href="?page={{ products.previous_page_number }}">&laquo; Previous</a>
+    {% endif %}
+
+    <span>Page {{ products.number }} of {{ products.paginator.num_pages }}</span>
+
+    {% if products.has_next %}
+    <a href="?page={{ products.next_page_number }}">Next &raquo;</a>
+    {% endif %}
+  </div>
 </div>
 
-  {% else %}
-    <p>No products matched your search.</p>
-  {% endif %}
-<script>
-  function swapImage(container) {
-    const img = container.querySelector('.product-img');
-    const hoverSrc = img.getAttribute('data-hover');
-    if (hoverSrc) {
-      img.src = hoverSrc;
-    }
-  }
 
-  function resetImage(container) {
-    const img = container.querySelector('.product-img');
-    const defaultSrc = img.getAttribute('data-default');
-    if (defaultSrc) {
-      img.src = defaultSrc;
-    }
-  }
-
-  function previewColor(productId, imageUrl) {
-    const img = document.querySelector(`.product-img-${productId}`);
-    if (img) img.src = imageUrl;
-  }
-
-  function resetColor(productId) {
-    const img = document.querySelector(`.product-img-${productId}`);
-    if (img) img.src = img.dataset.default;
-  }
-</script>
-{% endblock %}
+{% endblock content %}

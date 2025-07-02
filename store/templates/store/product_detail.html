@@ -1,7 +1,7 @@
 {% extends 'main/base.html' %}
 
 {% block content %}
-<div class="container">
+<div class="product-details-container">
   <div class="product-details-page">
     <div class="product-details-preview">
 
@@ -9,12 +9,12 @@
       <div class="product-image-section">
         <div class="product-image-preview">
           <img id="main-product-img" src="{{ selected_color.images.first.imageURL }}"
-            data-default="{{ selected_color.images.first.imageURL }}" width="400" style="aspect-ratio: 1; object-fit: cover;">
+            data-default="{{ selected_color.images.first.imageURL }}" width="100%" style="aspect-ratio: 1; object-fit: cover;">
         </div>
 
         <div class="product-thumbnails">
           {% for image in selected_color.images.all %}
-          <img src="{{ image.imageURL }}" alt="" width="40" height="40"
+          <img src="{{ image.imageURL }}" alt="" width="60" height="60"
             onmouseover="swapMainImage('{{ image.imageURL }}')" onmouseout="resetMainImage()" style="aspect-ratio: 1; object-fit: cover;">
           {% endfor %}
         </div>
@@ -79,10 +79,6 @@
 
 <!-- 💄 Styles -->
 <style>
-  .container {
-    max-width: 1200px;
-    margin: 0 auto;
-  }
 
   .product-details-preview {
     display: flex;
@@ -147,8 +143,9 @@
           data.images.forEach(img => {
             const el = document.createElement('img');
             el.src = img;
-            el.width = 40;
-            el.height = 40;
+            el.width = 60;
+            el.height = 60;
+            el.style = "aspect-ratio: 1; object-fit: cover; cursor: pointer; margin-right: 5px; border: 1px solid #ccc; padding: 2px;";
             el.onmouseover = () => mainImg.src = img;
             el.onmouseout = () => mainImg.src = mainImg.dataset.default;
             thumbs.appendChild(el);

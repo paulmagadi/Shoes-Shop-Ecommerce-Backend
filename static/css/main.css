@@ -1,6 +1,26 @@
+/*  File: static/css/main.css */
+/* --- a/file:///c%3A/Users/ThinkPad/Desktop/SQ/2025/advanced/Shoes-Shop-Ecommerce/static/css/main.css */
+/* +++ b/file:///c%3A/Users/ThinkPad/Desktop/SQ/2025/advanced/Shoes-Shop-Ecommerce/static/css/main.css */
+/* @@ -1,4 +1,4 @@ */       
+
+:root {
+    --primary-color: #fd3008;
+    --secondary-color: #00a896;
+    --neutral-light-color: #f8f9fa;
+    --neutral-dark-color: #2d2d2d;
+    --accent-color: #ffd166;
+}
+
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+    /* font-family: 'Poppins', sans-serif; */
+}
+
 .container {
     width: 100%;
-    max-width: 1280px;
+    max-width: 1200px;
     margin: 0 auto;
     padding: 0;
 }
@@ -9,5 +29,5 @@
     display: grid;
     gap: 1rem;
     grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
-    padding: 1em 0;
+    padding: 1em;
   }
